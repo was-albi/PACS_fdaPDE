@@ -148,13 +148,18 @@ SEXP GAM_skeleton(InputHandler &GAMData, SEXP Rmesh, SEXP Rmu0, std::string fami
 
 
   fpirls->apply();
+	std::string saving_filename = "TEST_APPLY";
+  saving_filename = saving_filename + ".txt";
+  printer::saveVectorXr(saving_filename,mu0);
+
 
   const std::vector<VectorXr>& solution = fpirls->getSolution();
   const std::vector<Real>& dof = fpirls->getDOF();
-  const std::vector<Real> J_value = fpirls->get_J();
+  const std::vector<Real>& J_value = fpirls->get_J();
   const std::vector<VectorXr>& beta_hat_tmp = fpirls->getBetaEst();
   const std::vector<VectorXr>& fn_hat = fpirls->getFunctionEst();
   const std::vector<Real> scale_parameter_est = fpirls->getScaleParamEst();
+	const std::vector<Real>& gcv = fpirls->getGCV();
 
 	std::vector<VectorXr> beta_hat = beta_hat_tmp;
 
@@ -163,18 +168,44 @@ SEXP GAM_skeleton(InputHandler &GAMData, SEXP Rmesh, SEXP Rmu0, std::string fami
 		beta_hat.push_back(tmp);
 	}
 
-  Rprintf("J MINIMA %f\n",J_value[0]);
-// COMPOSIZIONE SEXP result FOR RETURN
+  // COMPOSIZIONE SEXP result FOR RETURN
+
+	saving_filename = "DIMESIONE_solution";
+  saving_filename = saving_filename + ".txt";
+  printer::SaveDimension(saving_filename,solution);
+
+	saving_filename = "DIMESIONE_dof";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,dof);
+
+	saving_filename = "DIMESIONE_Jvalue";
+  saving_filename = saving_filename + ".txt";
+  printer::SaveDimension(saving_filename,J_value);
+
+	saving_filename = "DIMENSIONE_beta_hat";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,beta_hat_tmp);
+
+	saving_filename = "DIMENSIONE_fn_hat";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,fn_hat);
+
+	saving_filename = "DIMENSIONE_scale_param";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,scale_parameter_est);
+
 
 	//Copy result in R memory
 	SEXP result = R_NilValue;
- result = PROTECT(Rf_allocVector(VECSXP, 6));
+ result = PROTECT(Rf_allocVector(VECSXP, 7));
 	SET_VECTOR_ELT(result, 0, Rf_allocMatrix(REALSXP, solution[0].size(), solution.size()));
-	SET_VECTOR_ELT(result, 1, Rf_allocVector(REALSXP, solution.size()));
-  	SET_VECTOR_ELT(result, 2, Rf_allocVector(REALSXP, J_value.size()));
-  	SET_VECTOR_ELT(result, 3, Rf_allocMatrix(REALSXP, beta_hat[0].size(), beta_hat.size()));
-  	SET_VECTOR_ELT(result, 4, Rf_allocMatrix(REALSXP, fn_hat[0].size(), fn_hat.size()));
-		SET_VECTOR_ELT(result, 5, Rf_allocVector(REALSXP, scale_parameter_est.size()));
+	SET_VECTOR_ELT(result, 1, Rf_allocVector(REALSXP, dof.size()));
+  SET_VECTOR_ELT(result, 2, Rf_allocVector(REALSXP, J_value.size()));
+  SET_VECTOR_ELT(result, 3, Rf_allocMatrix(REALSXP, beta_hat[0].size(), beta_hat.size()));
+  SET_VECTOR_ELT(result, 4, Rf_allocMatrix(REALSXP, fn_hat[0].size(), fn_hat.size()));
+	SET_VECTOR_ELT(result, 5, Rf_allocVector(REALSXP, scale_parameter_est.size()));
+	SET_VECTOR_ELT(result, 6, Rf_allocVector(REALSXP, gcv.size()));
+
   	//return solution
 	Real *rans = REAL(VECTOR_ELT(result, 0));
 	for(UInt j = 0; j < solution.size(); j++)
@@ -183,12 +214,20 @@ SEXP GAM_skeleton(InputHandler &GAMData, SEXP Rmesh, SEXP Rmu0, std::string fami
 			rans[i + solution[0].size()*j] = solution[j][i];
 	}
 
+	saving_filename = "TEST_SOLUTION";
+	saving_filename = saving_filename + ".txt";
+	printer::saveVectorXr(saving_filename,mu0);
+
 	//return dof
 	Real *rans2 = REAL(VECTOR_ELT(result, 1));
-	for(UInt i = 0; i < solution.size(); i++)
+	for(UInt i = 0; i < dof.size(); i++)
 	{
 		rans2[i] = dof[i];
 	}
+
+	saving_filename = "TEST_DOF";
+	saving_filename = saving_filename + ".txt";
+	printer::saveVectorXr(saving_filename,mu0);
 
 	//return J_value
   	Real *rans3 = REAL(VECTOR_ELT(result, 2));
@@ -196,6 +235,10 @@ SEXP GAM_skeleton(InputHandler &GAMData, SEXP Rmesh, SEXP Rmu0, std::string fami
 	{
 		rans3[i] = J_value[i];
 	}
+
+	saving_filename = "TEST_MU0";
+	saving_filename = saving_filename + ".txt";
+	printer::saveVectorXr(saving_filename,mu0);
 
 	//return beta hat
 	Real *rans4 = REAL(VECTOR_ELT(result, 3));
@@ -205,6 +248,10 @@ SEXP GAM_skeleton(InputHandler &GAMData, SEXP Rmesh, SEXP Rmu0, std::string fami
 			rans4[i + beta_hat[0].size()*j] = beta_hat[j](i);
 	}
 
+	saving_filename = "TEST_beta_hat";
+	saving_filename = saving_filename + ".txt";
+	printer::saveVectorXr(saving_filename,mu0);
+
 	//return fn hat
 	Real *rans5 = REAL(VECTOR_ELT(result, 4));
 	for(UInt j = 0; j < fn_hat.size(); j++)
@@ -212,13 +259,25 @@ SEXP GAM_skeleton(InputHandler &GAMData, SEXP Rmesh, SEXP Rmu0, std::string fami
 		for(UInt i = 0; i < fn_hat[0].size(); i++)
 			rans5[i + fn_hat[0].size()*j] = fn_hat[j](i);
 	}
-
+	saving_filename = "TEST_SCALEPARAM";
+	saving_filename = saving_filename + ".txt";
+	printer::saveVectorXr(saving_filename,mu0);
 	//return scale parameter
 	Real *rans6 = REAL(VECTOR_ELT(result, 5));
 	for(UInt j = 0; j < scale_parameter_est.size(); j++){
 				rans6[j] = scale_parameter_est[j];
 	}
 
+	//return GCV values
+  Real *rans7 = REAL(VECTOR_ELT(result, 6));
+  for(UInt i = 0; i < gcv.size(); i++)
+	{
+		rans7[i] = gcv[i];
+	}
+
+	saving_filename = "TEST_RETURN_CPP";
+	saving_filename = saving_filename + ".txt";
+	printer::saveVectorXr(saving_filename,mu0);
 
 	UNPROTECT(1);
 
@@ -642,7 +701,7 @@ SEXP Smooth_FPCA(SEXP Rlocations, SEXP Rdatamatrix, SEXP Rmesh, SEXP Rorder, SEX
   					SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations , SEXP Rfamily, SEXP RmeshCount, SEXP Rmax_num_iteration, SEXP Rtreshold,SEXP Rtune, SEXP Rmu0, SEXP RscaleParam)
 {
     //Set input data: can I re-use this fdapde class? FPCA actually implement it's own class for the datastructure
-	GAMDataLaplace regressionData(Rlocations, Robservations, Rorder, Rlambda, Rmax_num_iteration, Rtreshold, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF, RGCVmethod, Rnrealizations);
+	GAMDataLaplace regressionData(Rlocations, Robservations, Rorder, Rlambda, Rmax_num_iteration, Rtreshold, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF, RGCVmethod, Rnrealizations, Rtune);
 
  // mydim e ndim sono entrambi 2 nei nostri casi (mesh 2D)
  // ndim si riferisce allo spazio in cui la mesh è embedded, mydim è la dimensione della mesh (in caso Rimannian manifold si ha 2d immerso in 3d)
@@ -675,7 +734,7 @@ SEXP Smooth_FPCA(SEXP Rlocations, SEXP Rdatamatrix, SEXP Rmesh, SEXP Rorder, SEX
   					SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations , SEXP Rfamily, SEXP RmeshCount, SEXP Rmax_num_iteration, SEXP Rtreshold,SEXP Rtune, SEXP Rmu0, SEXP RscaleParam)
 {
     //Set input data: can I re-use this fdapde class? FPCA actually implement it's own class for the datastructure
-	GAMDataElliptic regressionData(Rlocations, Robservations, Rorder, Rlambda, RK, Rbeta, Rc, Rmax_num_iteration, Rtreshold, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF, RGCVmethod, Rnrealizations);
+	GAMDataElliptic regressionData(Rlocations, Robservations, Rorder, Rlambda, RK, Rbeta, Rc, Rmax_num_iteration, Rtreshold, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF, RGCVmethod, Rnrealizations, Rtune);
 
  // mydim e ndim sono entrambi 2 nei nostri casi (mesh 2D)
  // ndim si riferisce allo spazio in cui la mesh è embedded, mydim è la dimensione della mesh (in caso Rimannian manifold si ha 2d immerso in 3d)
@@ -709,7 +768,7 @@ SEXP Smooth_FPCA(SEXP Rlocations, SEXP Rdatamatrix, SEXP Rmesh, SEXP Rorder, SEX
   					SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations , SEXP Rfamily, SEXP RmeshCount, SEXP Rmax_num_iteration, SEXP Rtreshold,SEXP Rtune, SEXP Rmu0, SEXP RscaleParam)
 {
     //Set input data: can I re-use this fdapde class? FPCA actually implement it's own class for the datastructure
-	GAMDataEllipticSpaceVarying regressionData(Rlocations, Robservations, Rorder, Rlambda, RK, Rbeta, Rc, Ru, Rmax_num_iteration, Rtreshold, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF, RGCVmethod, Rnrealizations);
+	GAMDataEllipticSpaceVarying regressionData(Rlocations, Robservations, Rorder, Rlambda, RK, Rbeta, Rc, Ru, Rmax_num_iteration, Rtreshold, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF, RGCVmethod, Rnrealizations, Rtune);
 
  // mydim e ndim sono entrambi 2 nei nostri casi (mesh 2D)
  // ndim si riferisce allo spazio in cui la mesh è embedded, mydim è la dimensione della mesh (in caso Rimannian manifold si ha 2d immerso in 3d)

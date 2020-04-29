@@ -28,6 +28,32 @@ template<typename InputHandler, UInt ORDER, UInt mydim, UInt ndim>
 
 }
 
+template<typename InputHandler, UInt ORDER, UInt mydim, UInt ndim>
+RegressionEstimates<InputHandler,ORDER,mydim,ndim>::RegressionEstimates(const InputHandler& regressionData, const MeshHandler<ORDER,mydim,ndim>& mesh, const VectorXr& solution):_mesh(mesh){
+
+std::vector<VectorXr> new_solution;
+new_solution.push_back(solution);
+
+	// class members initialization
+	 _observations = regressionData.getObservations();
+	 _points = regressionData.getLocations();
+
+	 _CovMatrix = regressionData.getCovariates();
+	 _WeightsMatrix = regressionData.getWeightsMatrix();
+
+	 //initialize _solution_coeff
+	 VectorXr temp_solution = VectorXr::Zero(solution.size()/2);
+
+	 	for(UInt i = 0; i < solution.size()/2; i++){ // take only the value of f and not of laplacian(f)
+				temp_solution(i) = solution(i);
+	 	} //end for-i
+	 	_solution_coeff.push_back(temp_solution);
+
+
+
+};
+
+
 
 #ifdef R_VERSION_
 template<typename InputHandler, UInt ORDER, UInt mydim, UInt ndim>

@@ -100,6 +100,10 @@ class MixedFERegressionBase
 	template<typename A>
 	void apply(EOExpr<A> oper,const ForcingTerm & u);
 
+	//! A member function computing the dofs for external calls
+	template<typename A>
+	void computeDegreesOfFreedom(EOExpr<A> oper);
+
 	//! The function solving the system in the GAM case, used by the children classes. Saves the result in _solution
 	/*!
 			\param oper an operator, which is the Stiffness operator in case of Laplacian regularization

@@ -114,6 +114,9 @@ if(class(FEMbasis$mesh) == "mesh.2D"){
   f = bigsol[[1]][1:numnodes,]
   g = bigsol[[1]][(numnodes+1):(2*numnodes),]# laplacian(f)
 
+  print("DOFs: \n")
+  print(bigsol[[2]])
+  
   # Make Functional objects object
   fit.FEM  = FEM(f, FEMbasis)
   PDEmisfit.FEM = FEM(g, FEMbasis)
@@ -124,15 +127,13 @@ if(class(FEMbasis$mesh) == "mesh.2D"){
 
   J_minima = bigsol[[3]]
 
+  computedGCV = bigsol[[7]]
   if(GCV == TRUE)
   {
-  	#ToDo: 4)
-    #seq=getGCV(locations = locations, observations = observations, fit.FEM = fit.FEM, covariates = covariates, incidence_matrix = incidence_matrix, edf = bigsol[[2]], ndim, mydim)
-    #reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta, edf = bigsol[[2]], stderr = seq$stderr, GCV = seq$GCV)
-    }else{
-      reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta_hat = beta_hat, fn_hat = fn_hat, J_minima = J_minima)
-    }
-
-    return(reslist)
+    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta_hat = beta_hat, fn_hat = fn_hat, J_minima = J_minima, GCV = computedGCV)
+  }else{
+    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta_hat = beta_hat, fn_hat = fn_hat, J_minima = J_minima)
+  }
+  return(reslist)
 
   }

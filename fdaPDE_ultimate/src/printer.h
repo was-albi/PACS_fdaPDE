@@ -21,7 +21,7 @@ static void SaveMatrixXr(std::string& name_txt, const MatrixXr & mat){
 		constexpr UInt CONSTPREC = 16;
 
 
-		std::string directory = "/Users/giuliopn/PACSworkspace3/PACSworkspace/GAM_tests/debugging_output/CPP/";
+		std::string directory = "/home/alb/Scrivania/PACS/Git_Folder/debugging_output/CPP/";
 		name_txt = directory + name_txt;
 
 		std::ofstream FileDataMatrix(name_txt);
@@ -37,12 +37,28 @@ static void SaveMatrixXr(std::string& name_txt, const MatrixXr & mat){
 		FileDataMatrix.close();
 }
 
+template<typename T>
+static void SaveDimension(std::string& name_txt, const std::vector<T> & vec){
+		const UInt numelem = vec.size();
+		constexpr UInt CONSTPREC = 16;
+
+
+		std::string directory = "/home/alb/Scrivania/PACS/Git_Folder/debugging_output/CPP/";
+		name_txt = directory + name_txt;
+
+		std::ofstream FileDataMatrix(name_txt);
+		if(FileDataMatrix.is_open()){
+				FileDataMatrix<< vec.size();
+		}
+		FileDataMatrix.close();
+}
+
 
 static void saveVectorXr(std::string& name_txt, const VectorXr & vect){
    	const UInt size = vect.size();
 		constexpr UInt CONSTPREC = 16;
 
-	    std::string directory = "/Users/giuliopn/PACSworkspace3/PACSworkspace/GAM_tests/debugging_output/CPP/";
+	    std::string directory = "/home/alb/Scrivania/PACS/Git_Folder/debugging_output/CPP/";
 		name_txt = directory + name_txt;
 
 	std::ofstream File(name_txt);

@@ -48,6 +48,8 @@ public:
 	// c++ constructr
 	explicit RegressionEstimates(const InputHandler& regressionData, const MeshHandler<ORDER,mydim,ndim>& mesh, const std::vector<VectorXr>& solution);
 
+	explicit RegressionEstimates(const InputHandler& regressionData, const MeshHandler<ORDER,mydim,ndim>& mesh, const VectorXr& solution);
+
 
 	//! A method computing the result of the regression (beta_hat, fn_hat) given the solution of the FEM problem
 	void computeEstimates();

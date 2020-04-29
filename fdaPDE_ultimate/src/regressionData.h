@@ -23,6 +23,11 @@ class  RegressionData{
 		//Weighted regression
 		VectorXr WeightsMatrix_;
 
+    std::vector<Real> lambda_;
+
+    //bool inputType;
+    bool DOF_;
+
 	private:
 
 		// Design matrix pointer and dimensions
@@ -43,15 +48,13 @@ class  RegressionData{
 
 		//Other parameters
 		UInt order_;
-		std::vector<Real> lambda_;
+
 		UInt GCVmethod_;
 		UInt nrealizations_;      // Number of relizations for the stochastic estimation of GCV
 
 		std::vector<Real> bc_values_;
 		std::vector<UInt> bc_indices_;
 
-		//bool inputType;
-		bool DOF_;
 
 		#ifdef R_VERSION_
 		void setLocations(SEXP Rlocations);
@@ -247,9 +250,12 @@ class  RegressionDataGAM : public RegressionHandler
 {
 	private:
 		VectorXr initialObservations_; // A copy of the true observations, which will not be overriden during PIRLS
+    std::vector<Real> global_lambda_; // A copy of labda vector for FPIRLS with multiple lambdas
 		std::vector<UInt> initial_observations_indeces_;
     UInt max_num_iterations_; // max n° of iterations allowed
     Real threshold_; // limit in difference among J_k and J_k+1 for which we stop PIRLS
+    Real tune_param;
+    bool DOF_GAM; // flag for dof computation
 
 	public:
 		//! A complete version of the constructor.
@@ -275,36 +281,42 @@ class  RegressionDataGAM : public RegressionHandler
 
 		//Laplace
 		explicit RegressionDataGAM(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP Rmax_num_iteration, SEXP Rthreshold, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues,
-				SEXP DOF,SEXP RGCVmethod, SEXP Rnrealizations);
+				SEXP DOF,SEXP RGCVmethod, SEXP Rnrealizations, SEXP Rtune);
 
 		// PDE
-		explicit RegressionDataGAM(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK, SEXP Rbeta, SEXP Rc, SEXP Rmax_num_iteration, SEXP Rthreshold, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP DOF,SEXP RGCVmethod, SEXP Rnrealizations);
+		explicit RegressionDataGAM(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK, SEXP Rbeta, SEXP Rc, SEXP Rmax_num_iteration, SEXP Rthreshold, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP DOF,SEXP RGCVmethod, SEXP Rnrealizations, SEXP Rtune);
 
 		// PDE SpaceVarying
-		explicit RegressionDataGAM(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK, SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rmax_num_iteration, SEXP Rthreshold, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP DOF,SEXP RGCVmethod, SEXP Rnrealizations);
+		explicit RegressionDataGAM(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK, SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rmax_num_iteration, SEXP Rthreshold, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP DOF,SEXP RGCVmethod, SEXP Rnrealizations, SEXP Rtune);
 
 		#endif
 
 		// Laplace
-		explicit RegressionDataGAM(std::vector<Point>& locations, VectorXr& observations, UInt order, std::vector<Real> lambda, UInt max_num_iterations, Real threshold, MatrixXr& covariates,	MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF);
+		explicit RegressionDataGAM(std::vector<Point>& locations, VectorXr& observations, UInt order, std::vector<Real> lambda, UInt max_num_iterations, Real threshold, MatrixXr& covariates,	MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF, Real tune);
 
 		// PDE
-		explicit RegressionDataGAM(std::vector<Point>& locations, VectorXr& observations, UInt order,	std::vector<Real> lambda, Eigen::Matrix<Real,2,2>& K,	Eigen::Matrix<Real,2,1>& beta, Real c, UInt max_num_iterations, Real threshold, MatrixXr& covariates,	MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices,	std::vector<Real>& bc_values, bool DOF);
+		explicit RegressionDataGAM(std::vector<Point>& locations, VectorXr& observations, UInt order,	std::vector<Real> lambda, Eigen::Matrix<Real,2,2>& K,	Eigen::Matrix<Real,2,1>& beta, Real c, UInt max_num_iterations, Real threshold, MatrixXr& covariates,	MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices,	std::vector<Real>& bc_values, bool DOF, Real tune);
 
 		// PDE SpaceVarying
-		explicit RegressionDataGAM(std::vector<Point>& locations, VectorXr& observations,	UInt order, std::vector<Real> lambda, const std::vector<Eigen::Matrix<Real,2,2>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,2> > >& K, const std::vector<Eigen::Matrix<Real,2,1>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,1> > >& beta, const std::vector<Real>& c, const std::vector<Real>& u, UInt max_num_iterations, Real threshold, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values,	bool DOF);
+		explicit RegressionDataGAM(std::vector<Point>& locations, VectorXr& observations,	UInt order, std::vector<Real> lambda, const std::vector<Eigen::Matrix<Real,2,2>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,2> > >& K, const std::vector<Eigen::Matrix<Real,2,1>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,1> > >& beta, const std::vector<Real>& c, const std::vector<Real>& u, UInt max_num_iterations, Real threshold, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values,	bool DOF, Real tune);
 
 
 		inline UInt const & get_maxiter() const {return max_num_iterations_;}
 		inline Real const & get_treshold() const {return threshold_;}
 		//! A method returning a reference to the observations vector
 		inline VectorXr const & getInitialObservations() const {return initialObservations_;}
+    inline std::vector<Real> const & getGlobalLambda() const {return global_lambda_;}
 		inline UInt const getNumberofInitialObservations() const {return initial_observations_indeces_.size();}
+    inline bool const getDOF_GAM() const {return DOF_GAM;}
+    inline Real const getTuneParam() const {return tune_param;}
 
 		//! Update Pseudodata (observations and weights)
-		void updatePseudodata(VectorXr& z_,  VectorXr& P);
+		void updatePseudodata(VectorXr& z_, VectorXr& P);
+    void setCurrentLambda(UInt lambda_index){this->lambda_ = std::vector<Real>(1,global_lambda_[lambda_index]);}
 
 		void copyInitialObservations(){initialObservations_ = this->observations_;}
+    void copyLambdaVector(){global_lambda_ = this->lambda_;}
+    void setDOFflag(){DOF_GAM = this->DOF_; this->DOF_ = false;}
 
 		#ifdef R_VERSION_
 

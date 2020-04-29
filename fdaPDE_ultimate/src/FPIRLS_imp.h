@@ -3,24 +3,51 @@
 
 #include "FPIRLS.h"
 
+template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
+FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::FPIRLS_Base(const MeshHandler<ORDER,mydim,ndim>& mesh, InputHandler& inputData, VectorXr mu0):mesh_(mesh), inputData_(inputData){
+  Rprintf("Hello I'm FPIRLS_Base constructor \n");
+
+  //mu_(inputData.getLambda().size(),mu0);
+  //current_J_values(inputData.getLambda().size(),std::array<Real,2>{1,1});
+  //past_J_values(inputData.getLambda().size(),std::array<Real,2>{1,1});
+
+  std::string saving_filename = "TEST_COSTRUTTORE";
+  saving_filename = saving_filename + ".txt";
+  printer::saveVectorXr(saving_filename,mu0);
+
+
+  //MU,J
+  for(UInt j=0; j< inputData.getLambda().size() ; j++){
+    mu_.push_back(mu0);
+    current_J_values.push_back(std::array<Real,2>{1,1});
+    past_J_values.push_back(std::array<Real,2>{1,1});
+  }
+
+
+}; // Constructor
+
 
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
 void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::apply( const ForcingTerm& u){
   // f-PRILS implementation
 
   this->inputData_.copyInitialObservations();
+  this->inputData_.copyLambdaVector();
+  this->inputData_.setDOFflag();
 
   // STEP 0: initialization
-  Rprintf("FPIRLS.apply: STEP 0: initialization \n");
   //  if(mu_.size()==0) //mu can be initialized or not by the user
       //initialize_mu(inputData_.getObservations());
 
   G_.resize(mu_.size());
   WeightsMatrix_.resize(mu_.size());
-  n_iterations = 0;
-  current_J_value[0] = past_J_value[0] + 2*inputData_.get_treshold();
-  current_J_value[1] = past_J_value[1] + 2*inputData_.get_treshold();
-
+  _beta_hat.resize(mu_.size());
+  _fn_hat.resize(mu_.size());
+  _dof.resize(mu_.size());
+  _solution.resize(mu_.size());
+  pseudoObservations_.resize(mu_.size());
+  n_iterations = std::vector<UInt>(mu_.size(),0);
+  _GCV.resize(mu_.size(),-1);
 
   FiniteElement<Integrator, ORDER, mydim, ndim> fe;
 
@@ -32,46 +59,111 @@ void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::apply( const Forci
   	Assembler::forcingTerm(mesh_, fe, u, forcingTerm);
   }
 
-  while(stopping_criterion())  // n_iterations < inputData_.get_maxiter() && past_J_value - current_J_value < inputData_.get_treshold()
+  std::string saving_filename = "TEST_1";
+  saving_filename = saving_filename + ".txt";
+  printer::saveVectorXr(saving_filename,mu_[0]);
+
+for(UInt i=0 ; i < mu_.size() ; i++){
+
+  current_J_values[i][0] = past_J_values[i][0] + 2*inputData_.get_treshold();
+  current_J_values[i][1] = past_J_values[i][1] + 2*inputData_.get_treshold();
+
+
+    saving_filename = "TEST_2";
+    saving_filename = saving_filename + ".txt";
+    printer::saveVectorXr(saving_filename,mu_[0]);
+
+
+
+  this->inputData_.setCurrentLambda(i); // set right lambda for the iteration
+
+  while(stopping_criterion(i))  // n_iterations < inputData_.get_maxiter() && past_J_value - current_J_value < inputData_.get_treshold()
   {
 
-  Rprintf("FPIRLS.apply: while iteration number: %d \n", n_iterations);
+  Rprintf("FPIRLS.apply: while iteration number: %d \n", n_iterations[i]);
   // STEP (1)
 
-    compute_G();
+  saving_filename = "TEST_3";
+  saving_filename = saving_filename + ".txt";
+  printer::saveVectorXr(saving_filename,mu_[0]);
 
-    compute_Weights();
 
-    compute_pseudoObs();
+    compute_G(i);
 
-    Rprintf("\t \t mu_(0): %f, size: %d \n", mu_(0), mu_.size() );
+    saving_filename = "TEST_4";
+    saving_filename = saving_filename + ".txt";
+    printer::saveVectorXr(saving_filename,mu_[0]);
+
+
+    compute_Weights(i);
+
+    saving_filename = "TEST_5";
+    saving_filename = saving_filename + ".txt";
+    printer::saveVectorXr(saving_filename,mu_[0]);
+
+
+    compute_pseudoObs(i);
+
+
+    saving_filename = "TEST_6";
+    saving_filename = saving_filename + ".txt";
+    printer::saveVectorXr(saving_filename,mu_[0]);
+
 
   // STEP (2)
-    this->inputData_.updatePseudodata(pseudoObservations_, WeightsMatrix_);
-    update_solution(); // here I'm performing FERegression using appropriate objects. I need pseudo data and mesh and it computes solution and dof
+    this->inputData_.updatePseudodata(pseudoObservations_[i], WeightsMatrix_[i]);
+    update_solution(i); // here I'm performing FERegression using appropriate objects. I need pseudo data and mesh and it computes solution and dof
+
+
+    saving_filename = "TEST_7";
+    saving_filename = saving_filename + ".txt";
+    printer::saveVectorXr(saving_filename,mu_[0]);
 
   // STEP (3)
 
-    compute_mu();
+    compute_mu(i);
+
+
+    saving_filename = "TEST_8";
+    saving_filename = saving_filename + ".txt";
+    printer::saveVectorXr(saving_filename,mu_[0]);
 
   // update J
 
-    past_J_value = current_J_value;
-    current_J_value = compute_J();
-    Rprintf("\t \t current_J_value: param -> %f non-param -> %f \n", current_J_value[0],current_J_value[1]);
+    past_J_values[i] = current_J_values[i];
+    current_J_values[i] = compute_J(i);
 
-    n_iterations++;
+    n_iterations[i]++;
+
+    saving_filename = "TEST_9";
+    saving_filename = saving_filename + ".txt";
+    printer::saveVectorXr(saving_filename,mu_[0]);
+
 
   } //end while
 
+  _J_minima.push_back(current_J_values[i][0]+current_J_values[i][1]);
 
-  _J_minima.push_back(current_J_value[0]+current_J_value[1]);
+  if(this->inputData_.getDOF_GAM()){
+    saving_filename = "TEST_GCV";
+    saving_filename = saving_filename + ".txt";
+    printer::saveVectorXr(saving_filename,mu_[0]);
+    compute_GCV(i);
+  }
+
+}// end for
+
+
+saving_filename = "TEST_10";
+saving_filename = saving_filename + ".txt";
+printer::saveVectorXr(saving_filename,mu_[0]);
+
 
 }// end apply
 
 
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
-void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::update_solution(){
+void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::update_solution(UInt& lambda_index){
   // performs step (2) of PIRLS. It requires pseudo data after step(1) and mimic regression skeleton behaviour
 
   // Here we have to solve a weighted regression problem with laplacian penality
@@ -84,20 +176,20 @@ void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::update_solution(){
   MixedFERegression<InputHandler, Integrator, ORDER, mydim, ndim> regression(mesh_, inputData_);
 
   regression.apply();
-  //  regression.apply();
-  _solution = regression.getSolution();
-  _dof = regression.getDOF();
+
+  _solution[lambda_index] = regression.getSolution()[0];
+  _dof[lambda_index] = regression.getDOF()[0];
 
   std::string saving_filename = "solution_entire_";
-  saving_filename = saving_filename + std::to_string(n_iterations) + ".txt";
-  printer::saveVectorXr(saving_filename,_solution[0]);
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+  printer::saveVectorXr(saving_filename,_solution[lambda_index]);
 
-  VectorXr solution_coefs = VectorXr::Zero(_solution[0].size()/2);
-  VectorXr laplacian_coefs = VectorXr::Zero(_solution[0].size()/2);
+/*  VectorXr solution_coefs = VectorXr::Zero(_solution[lambda_index].size()/2);
+  VectorXr laplacian_coefs = VectorXr::Zero(_solution[lambda_index].size()/2);
 
-  for(UInt i=0; i < _solution[0].size()/2; i++){
-    solution_coefs[i] = _solution[0][i];
-    laplacian_coefs[i] = _solution[0][i + _solution[0].size()/2];
+  for(UInt i=0; i < _solution[lambda_index].size()/2; i++){
+    solution_coefs[i] = _solution[lambda_index][i];
+    laplacian_coefs[i] = _solution[lambda_index][i + _solution[0].size()/2];
   }
 
 
@@ -107,88 +199,92 @@ void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::update_solution(){
 
   		saving_filename = "apply_return_laplacian_coefs_";
   	  saving_filename = saving_filename + ".txt";
-  	  printer::saveVectorXr(saving_filename,laplacian_coefs);
+  	  printer::saveVectorXr(saving_filename,laplacian_coefs);*/
 
 }
 
 
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
-void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_pseudoObs(){
+void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_pseudoObs(UInt& lambda_index){
 
   VectorXr g_mu;
   VectorXr first_addendum;
   VectorXr y = inputData_.getInitialObservations();
 
-  g_mu.resize(mu_.size());
-  first_addendum.resize(mu_.size());
+  g_mu.resize(mu_[lambda_index].size());
+  first_addendum.resize(mu_[lambda_index].size());
 
-  for(auto i=0; i < mu_.size(); i++){
-    g_mu(i) = link(mu_(i));
-    first_addendum(i) = G_(i)*(y(i)-mu_(i));
+  for(auto i=0; i < mu_[lambda_index].size(); i++){
+    g_mu(i) = link(mu_[lambda_index](i));
+    first_addendum(i) = G_[lambda_index](i)*(y(i)-mu_[lambda_index](i));
   }
 
-  pseudoObservations_ = first_addendum + g_mu;
+  pseudoObservations_[lambda_index] = first_addendum + g_mu;
 
   std::string saving_filename = "pseudoObservations_";
-  saving_filename = saving_filename + std::to_string(n_iterations) + ".txt";
-  printer::saveVectorXr(saving_filename,pseudoObservations_);
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+  printer::saveVectorXr(saving_filename,pseudoObservations_[lambda_index]);
 }
 
 
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
-void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_G(){
+void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_G(UInt& lambda_index){
 
-  for(UInt i = 0; i<mu_.size(); i++){
-    G_(i) = link_deriv(mu_(i));
+  G_[lambda_index].resize(mu_[lambda_index].size());
+
+  for(UInt i = 0; i<mu_[lambda_index].size(); i++){
+    G_[lambda_index](i) = link_deriv(mu_[lambda_index](i));
   }
 
   std::string saving_filename = "G_";
-  saving_filename = saving_filename + std::to_string(n_iterations) + ".txt";
-  printer::saveVectorXr(saving_filename,G_);
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+  printer::saveVectorXr(saving_filename,G_[lambda_index]);
 
 }
 
 
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
-void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_Weights(){
+void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_Weights(UInt& lambda_index){
 // computed W elementwise (it is a diagonal matrix)
 
-  for(auto i=0; i < mu_.size(); i++){
-    WeightsMatrix_(i) = 1/(pow(G_(i),2)*(var_function( mu_(i))));
+  WeightsMatrix_[lambda_index].resize( mu_[lambda_index].size());
+
+  for(auto i=0; i < mu_[lambda_index].size(); i++){
+    WeightsMatrix_[lambda_index](i) = 1/(pow(G_[lambda_index](i),2)*(var_function( mu_[lambda_index](i))));
   }
 
   std::string saving_filename = "WeightsMatrix_";
-  saving_filename = saving_filename + std::to_string(n_iterations) + ".txt";
-  printer::saveVectorXr(saving_filename,WeightsMatrix_);
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+  printer::saveVectorXr(saving_filename,WeightsMatrix_[lambda_index]);
 
 }
 
 
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
-void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_mu(){
+void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_mu(UInt& lambda_index){
 
 
-  VectorXr X_beta = VectorXr::Zero(mu_.size());
+  VectorXr X_beta = VectorXr::Zero(mu_[lambda_index].size());
 
   // METODO STATIC: OLD VERSION
   //MixedFERegressionBase<RegressionData, Integrator, ORDER, mydim, ndim>::computeRegressionSolution(_solution, pseudoData, mesh_, fn_hat, beta_hat);
 
-  RegressionEstimates<InputHandler, ORDER, mydim, ndim> regressionEst(inputData_, mesh_, _solution);
+  RegressionEstimates<InputHandler, ORDER, mydim, ndim> regressionEst(inputData_, mesh_, _solution[lambda_index]);
 
   regressionEst.computeEstimates();
 
-  _beta_hat = regressionEst.getBetaEst();
-  _fn_hat = regressionEst.getFunctionEst();
+  _beta_hat[lambda_index] = regressionEst.getBetaEst()[0];
+  _fn_hat[lambda_index] = regressionEst.getFunctionEst()[0];
 
   std::string saving_filename;
 
   saving_filename = "compute_mu_betahat_";
-  saving_filename = saving_filename + std::to_string(n_iterations) + ".txt";
-  printer::saveVectorXr(saving_filename,_beta_hat[0]);
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+  printer::saveVectorXr(saving_filename,_beta_hat[lambda_index]);
 
   saving_filename = "compute_mu_fnhat_";
-  saving_filename = saving_filename + std::to_string(n_iterations) + ".txt";
-  printer::saveVectorXr(saving_filename,_fn_hat[0]);
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+  printer::saveVectorXr(saving_filename,_fn_hat[lambda_index]);
 
   /*  for(UInt i = 0, i < pseudoData.getLambda().size(), i++){
 
@@ -206,37 +302,37 @@ void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_mu(){
   */
 
   if(inputData_.getCovariates().rows()>0)
-    X_beta = inputData_.getCovariates()*_beta_hat[0];
+    X_beta = inputData_.getCovariates()*_beta_hat[lambda_index];
 
   saving_filename = "X_beta";
-  saving_filename = saving_filename + std::to_string(n_iterations) + ".txt";
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
   printer::saveVectorXr(saving_filename,X_beta);
 
 
   for(UInt j=0; j < X_beta.size() ; j++){
-      mu_(j) = inv_link(X_beta[j] + _fn_hat[0][j]);
+      mu_[lambda_index](j) = inv_link(X_beta[j] + _fn_hat[lambda_index][j]);
   }
 
   saving_filename = "mu_";
-  saving_filename = saving_filename + std::to_string(n_iterations) + ".txt";
-  printer::saveVectorXr(saving_filename,mu_);
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+  printer::saveVectorXr(saving_filename,mu_[lambda_index]);
 
 }//end method
 
 
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
-bool FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::stopping_criterion(){
+bool FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::stopping_criterion(UInt& lambda_index){
   // return true if the f-PIRLS has to perform another iteration, false if it has to be stopped
 
   bool do_stop_by_iteration = false;  // Do I need to stop becouse n_it > n_max?
   bool do_stop_by_treshold = false; // Do I need to stop becouse |J(k) - J(k+1)| < treshold?
 
-  if(n_iterations > inputData_.get_maxiter()){
+  if(n_iterations[lambda_index] > inputData_.get_maxiter()){
     do_stop_by_iteration = true;
   }
 
-  if(n_iterations > 1){
-    if(abs(past_J_value[0]+past_J_value[1] - current_J_value[0] - current_J_value[1]) < inputData_.get_treshold()){
+  if(n_iterations[lambda_index] > 1){
+    if(abs(past_J_values[lambda_index][0]+past_J_values[lambda_index][1] - current_J_values[lambda_index][0] - current_J_values[lambda_index][1]) < inputData_.get_treshold()){
         do_stop_by_treshold = true;
    }
   }
@@ -284,13 +380,13 @@ void FPIRLS_Scaled<InputHandler, Integrator, ORDER, mydim, ndim>::compute_scale_
   const UInt n_obs = this->inputData_.getObservations().size();
 
   for(UInt i=0; i < this->_dof.size();i++){
-    _scale_parameter_estimates[i] = this->current_J_value[0]/(n_obs - this->_dof[i]);
+    _scale_parameter_estimates[i] = this->current_J_values[i][0]/(n_obs - this->_dof[i]);
   }
 
 }
 
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
-std::array<Real,2> FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_J(){
+std::array<Real,2> FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_J(UInt& lambda_index){
 
   Real parametric_value = 0;
   Real non_parametric_value = 0;
@@ -302,7 +398,7 @@ std::array<Real,2> FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::comp
   const VectorXr y = inputData_.getInitialObservations();
 
   for(UInt i=0; i < mu_.size(); i++){
-    tmp = sqrt( var_function( mu_(i)) ) * (y(i) - mu_(i)) ;
+    tmp = sqrt( var_function( mu_[lambda_index](i)) ) * (y(i) - mu_[lambda_index](i)) ;
     parametric_value += tmp*tmp;
   }
   Rprintf("\t \t norm_value: %f \n", parametric_value);
@@ -310,16 +406,16 @@ std::array<Real,2> FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::comp
 
 
   std::string saving_filename = "R0_";
-  saving_filename = saving_filename + std::to_string(n_iterations) + ".txt";
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
   printer::SaveMatrixXr(saving_filename,R0_);
 
-  Lf.resize(_solution[0].size()/2);
+  Lf.resize(_solution[lambda_index].size()/2);
   for(UInt i=0; i< Lf.size(); i++){
-    Lf(i) = _solution[0](Lf.size() + i);
+    Lf(i) = _solution[lambda_index](Lf.size() + i);
   }
 
   saving_filename = "Lf_";
-  saving_filename = saving_filename + std::to_string(n_iterations) + ".txt";
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
   printer::saveVectorXr(saving_filename,Lf);
 
 
@@ -329,11 +425,51 @@ std::array<Real,2> FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::comp
   }
 
   non_parametric_value = Lf.transpose() * R0_ * Lf;
-  non_parametric_value = inputData_.getLambda()[0]*non_parametric_value;
+  non_parametric_value = inputData_.getGlobalLambda()[lambda_index]*non_parametric_value;
 
   std::array<Real,2> returnObject{parametric_value, non_parametric_value};
 
   return returnObject;
+}
+
+
+template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
+void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_GCV(UInt& lambda_index){
+
+//GCV COMPUTATION
+MixedFERegression<InputHandler, Integrator, ORDER, mydim, ndim> regression(mesh_, inputData_);
+
+regression.computeDegreesOfFreedom();
+_dof[lambda_index] = regression.getDOF()[0];
+
+std::string saving_filename = "DIMENSIONE_dof_computeGCV";
+saving_filename = saving_filename + ".txt";
+printer::SaveDimension(saving_filename,_dof);
+
+VectorXr y = inputData_.getInitialObservations();
+Real GCV_value = 0;
+
+for(UInt j=0; j < y.size();j++)
+  GCV_value += (y[j]-mu_[lambda_index][j])*(y[j]-mu_[lambda_index][j]);  //norm computation
+
+  saving_filename = "DIMENSIONE_GCV_value";
+  saving_filename = saving_filename + ".txt";
+  printer::SaveDimension(saving_filename,_dof);
+
+GCV_value *= y.size();
+
+GCV_value /= (y.size()-inputData_.getTuneParam()*_dof[lambda_index])*(y.size()-inputData_.getTuneParam()*_dof[lambda_index]);
+
+saving_filename = "DIMENSIONE_GCV_value_2";
+saving_filename = saving_filename + ".txt";
+printer::SaveDimension(saving_filename,_dof);
+
+_GCV[lambda_index] = GCV_value;
+
+saving_filename = "DIMENSIONE_GCV_value_3";
+saving_filename = saving_filename + ".txt";
+printer::SaveDimension(saving_filename,_dof);
+
 }
 
 /*

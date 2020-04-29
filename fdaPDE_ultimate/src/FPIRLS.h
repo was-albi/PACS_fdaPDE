@@ -25,16 +25,16 @@ class FPIRLS_Base {
   //RegressionData& pseudoData_; // contains data used to perform step (2) of f-PIRLS algo
   // question is: should I introduce a new template for this (data in step (2))? At the moment it is RegressionData, but one can imagine future developements around childs of regressionData...
 
-  VectorXr mu_; // mean vector
-  VectorXr pseudoObservations_; // pseudo observations
-  VectorXr G_; // diag(link_deriv(mu)) it is a vector since it would be more memory consuming to declere it as a matrix
-  VectorXr WeightsMatrix_; // (G^-2 * Var_function(mu)^-1) it is a vector for the same reason as above
+  std::vector<VectorXr> mu_; // mean vector
+  std::vector<VectorXr> pseudoObservations_; // pseudo observations
+  std::vector<VectorXr> G_; // diag(link_deriv(mu)) it is a vector since it would be more memory consuming to declere it as a matrix
+  std::vector<VectorXr> WeightsMatrix_; // (G^-2 * Var_function(mu)^-1) it is a vector for the same reason as above
 
-  std::array<Real,2> current_J_value{1,1};
-  std::array<Real,2> past_J_value{1,1}; // stores the value of the functional J at each iteration in order to apply the stopping criterion
+  std::vector<std::array<Real,2>> current_J_values;
+  std::vector<std::array<Real,2>> past_J_values; // stores the value of the functional J at each iteration in order to apply the stopping criterion
   // the value of the functional is saved deparated (parametric and non-parametric part)
 
-  UInt n_iterations; // current n° of iteration of PIRLS
+  std::vector<UInt> n_iterations; // current n° of iteration of PIRLS
 
   //FE matrices used for computation of the functional
   SpMat R0_;
@@ -43,6 +43,7 @@ class FPIRLS_Base {
 
   std::vector<VectorXr> _solution; //!A Eigen::VectorXr: Stores the system solution.
   std::vector<Real> _dof; //! A vector storing the computed dofs
+  std::vector<Real> _GCV; //! A vector storing GCV values
   std::vector<Real> _J_minima;
 
   // Evaluation of the solution in the locations and beta estimates
@@ -50,19 +51,21 @@ class FPIRLS_Base {
   std::vector<VectorXr> _fn_hat;
 
 
-    void compute_pseudoObs(); // perform step (1) of f-PIRLS
+    void compute_pseudoObs(UInt& lambda_index); // perform step (1) of f-PIRLS
 
-    void compute_G(); //assemble G matrix
+    void compute_G(UInt& lambda_index); //assemble G matrix
 
-    void compute_Weights(); // assemble W matrix
+    void compute_Weights(UInt& lambda_index); // assemble W matrix
 
-    void update_solution(); // perform step (2) of f-PIRLS it is dependent on templates specs
+    void update_solution(UInt& lambda_index); // perform step (2) of f-PIRLS it is dependent on templates specs
 
-    void compute_mu(); // perform step (3) of f-PIRLS
+    void compute_mu(UInt& lambda_index); // perform step (3) of f-PIRLS
 
-    bool stopping_criterion(); // it stops PIRLS based on difference between functionals J_k J_k+1 or n_iterations > max_num_iterations
+    bool stopping_criterion(UInt& lambda_index); // it stops PIRLS based on difference between functionals J_k J_k+1 or n_iterations > max_num_iterations
 
-    std::array<Real,2> compute_J(); // compute the current value of J
+    std::array<Real,2> compute_J(UInt& lambda_index); // compute the current value of J
+
+    void compute_GCV(UInt& lambda_index); // compute the GCV value for a given lambda
 
     // link and other functions, it can be extended to handle vector of parameters
     virtual Real link(const Real& mu) = 0; // g(.)
@@ -76,9 +79,7 @@ class FPIRLS_Base {
 
   public:
 
-    FPIRLS_Base(const MeshHandler<ORDER,mydim,ndim>& mesh, InputHandler& inputData, VectorXr mu0):mesh_(mesh), inputData_(inputData), mu_(mu0){
-      Rprintf("Hello I'm FPIRLS_Base constructor \n");
-    }; // Constructor
+    FPIRLS_Base(const MeshHandler<ORDER,mydim,ndim>& mesh, InputHandler& inputData, VectorXr mu0); // Constructor
 
     //! A destructor
    virtual ~FPIRLS_Base(){};
@@ -98,6 +99,8 @@ class FPIRLS_Base {
    inline std::vector<VectorXr> const & getFunctionEst() const{return _fn_hat;}
    //! A inline member that returns scale parameter estimates.
    inline std::vector<Real> const getScaleParamEst() const{return std::vector<Real>(1,1) ;}
+   //! A inline member that returns a the computed (or not) GCV estimates. If GCV is not computed, -1 is returned
+   inline std::vector<Real> const & getGCV() const{return _GCV;}
 
    // FURTHER QUESTIONS - where to implement GCV (lambda can be specified by user or estimated via GCV), where to implement the estimate of phi
 

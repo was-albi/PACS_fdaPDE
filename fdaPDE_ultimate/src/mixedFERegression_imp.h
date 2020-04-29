@@ -424,6 +424,56 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::getRightHa
 	}
 }
 
+
+template<typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
+template<typename A>
+void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::computeDegreesOfFreedom(EOExpr<A> oper){
+
+	UInt nnodes=mesh_.num_nodes();
+	FiniteElement<Integrator, ORDER, mydim, ndim> fe;
+
+	std::vector<UInt> test_boi(1,1);
+	std::string saving_filename = "prova_cdof";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,test_boi);
+
+	setA();
+	saving_filename = "prova_cdof_1";
+ saving_filename = saving_filename + ".txt";
+ printer::SaveDimension(saving_filename,test_boi);
+	setPsi();
+	saving_filename = "prova_cdof_2";
+ saving_filename = saving_filename + ".txt";
+ printer::SaveDimension(saving_filename,test_boi);
+
+	typedef EOExpr<Mass> ETMass; Mass EMass; ETMass mass(EMass);
+	Assembler::operKernel(oper, mesh_, fe, R1_);
+	Assembler::operKernel(mass, mesh_, fe, R0_);
+
+	this->_dof.resize(regressionData_.getLambda().size());
+
+
+	for(UInt i = 0; i<regressionData_.getLambda().size(); ++i)
+	{
+		Real lambda = regressionData_.getLambda()[i];
+		SpMat R1_lambda = (-lambda)*R1_;
+		SpMat R0_lambda = (-lambda)*R0_;
+		saving_filename = "prova_cdof_3";
+	 saving_filename = saving_filename + ".txt";
+	 printer::SaveDimension(saving_filename,test_boi);
+
+		this->buildMatrixNoCov(psi_, R1_lambda, R0_lambda);
+
+		saving_filename = "prova_cdof_4";
+	 saving_filename = saving_filename + ".txt";
+	 printer::SaveDimension(saving_filename,test_boi);
+
+		computeDegreesOfFreedom(i,lambda);
+	}
+
+}
+
+
 template<typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
 void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDegreesOfFreedom(UInt output_index, Real lambda)
 {
@@ -445,6 +495,12 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDeg
 	UInt nnodes = mesh_.num_nodes();
 	UInt nlocations = regressionData_.getNumberofObservations();
 	Real degrees=0;
+
+	std::vector<UInt> test_boi(1,1);
+	std::string saving_filename = "prova_cdof_exact_1";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,test_boi);
+
 
 	// Case 1: MUMPS
 	if (regressionData_.isLocationsByNodes() && regressionData_.getCovariates().rows() == 0 )
@@ -543,6 +599,10 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDeg
 			X1 = psi_.transpose() * A_.asDiagonal() * LeftMultiplybyQ(psi_);
 		}
 
+		saving_filename = "prova_cdof_exact_2";
+	 saving_filename = saving_filename + ".txt";
+	 printer::SaveDimension(saving_filename,test_boi);
+
 		if (isRcomputed_ == false){
 			isRcomputed_ = true;
 			Eigen::SparseLU<SpMat> solver;
@@ -551,8 +611,16 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDeg
 			R_ = R1_.transpose() * X2;
 		}
 
+		saving_filename = "prova_cdof_exact_3";
+	 saving_filename = saving_filename + ".txt";
+	 printer::SaveDimension(saving_filename,test_boi);
+
 		MatrixXr X3 = X1 + lambda * R_;
 		Eigen::LDLT<MatrixXr> Dsolver(X3);
+
+		saving_filename = "prova_cdof_exact_4";
+	 saving_filename = saving_filename + ".txt";
+	 printer::SaveDimension(saving_filename,test_boi);
 
 		auto k = regressionData_.getObservationsIndices();
 
@@ -571,6 +639,11 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDeg
 					B(k[i], j) = Qi(j);
 				}
 			}
+
+			saving_filename = "prova_cdof_exact_5";
+		 saving_filename = saving_filename + ".txt";
+		 printer::SaveDimension(saving_filename,test_boi);
+
 			// Solve the system TX = B
 			MatrixXr X;
 			X = Dsolver.solve(B);
@@ -580,9 +653,17 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDeg
 			}
 		}
 
+		saving_filename = "prova_cdof_exact_6";
+	 saving_filename = saving_filename + ".txt";
+	 printer::SaveDimension(saving_filename,test_boi);
+
 		if (!regressionData_.isLocationsByNodes()){
 			MatrixXr X;
 			X = Dsolver.solve(MatrixXr(X1));
+
+			saving_filename = "prova_cdof_exact_7";
+		 saving_filename = saving_filename + ".txt";
+		 printer::SaveDimension(saving_filename,test_boi);
 
 			if (regressionData_.getCovariates().rows() != 0) {
 				degrees += regressionData_.getCovariates().cols();
@@ -592,12 +673,22 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDeg
 			}
 		}
 	}
+
+	saving_filename = "prova_cdof_exact_8";
+ saving_filename = saving_filename + ".txt";
+ printer::SaveDimension(saving_filename,test_boi);
+
 	_dof[output_index] = degrees;
 }
 
 template<typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
 void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDegreesOfFreedomStochastic(UInt output_index, Real lambda)
 {
+
+	std::vector<UInt> test_boi(1,1);
+	std::string saving_filename = "prova_cdof_sticastix_1";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,test_boi);
 
 	UInt nnodes = mesh_.num_nodes();
 	UInt nlocations = regressionData_.getNumberofObservations();
@@ -618,6 +709,10 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDeg
 		}
 	}
 
+	saving_filename = "prova_cdof_sticastix_2";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,test_boi);
+
 	// Define the first right hand side : | I  0 |^T * psi^T * A * Q * u
 	MatrixXr b = MatrixXr::Zero(2*nnodes,u.cols());
 	if (regressionData_.getNumberOfRegions() == 0){
@@ -626,8 +721,16 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDeg
 		b.topRows(nnodes) = psi_.transpose() * A_.asDiagonal() * LeftMultiplybyQ(u);
 	}
 
+	saving_filename = "prova_cdof_sticastix_3";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,test_boi);
+
 	// Resolution of the system
 	MatrixXr x = system_solve(b);
+
+	saving_filename = "prova_cdof_sticastix_4";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,test_boi);
 
 //	Eigen::SparseLU<SpMat> solver;
 //
@@ -660,12 +763,21 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDeg
 	if (regressionData_.getCovariates().rows() != 0) {
 		q = regressionData_.getCovariates().cols();
 	}
+
+	saving_filename = "prova_cdof_sticastix_5";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,test_boi);
+
 	// For any realization we compute the degrees of freedom
 	for (int i=0; i<nrealizations; ++i) {
 
 		edf_vect(i) = uTpsi.row(i).dot(x.col(i).head(nnodes)) + q;
 	}
 
+	saving_filename = "prova_cdof_sticastix_6";
+	saving_filename = saving_filename + ".txt";
+	printer::SaveDimension(saving_filename,test_boi);
+	
 	// Estimates: sample mean, sample variance
 	Real mean = edf_vect.sum()/nrealizations;
 	_dof[output_index] = mean;
@@ -756,6 +868,12 @@ public:
 	    MixedFERegressionBase<RegressionData, Integrator, ORDER, mydim, ndim>::apply(stiff, ForcingTerm(std::vector<Real>(1)));
 	}
 
+	void computeDegreesOfFreedom()
+	{
+		typedef EOExpr<Stiff> ETStiff; Stiff EStiff; ETStiff stiff(EStiff);
+	    MixedFERegressionBase<RegressionData, Integrator, ORDER, mydim, ndim>::computeDegreesOfFreedom(stiff);
+	}
+
 };
 
 template<typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
@@ -787,6 +905,28 @@ public:
 	}
 	}
 
+	void computeDegreesOfFreedom()
+	{
+	if(mydim!=2 || ndim !=2){
+
+	#ifdef R_VERSION_
+		Rprintf("ERROR: these dimensions are not yet implemented, for the moment smoothEllipticPDE is available for mydim=ndim=2");
+	#else
+		std::cout << "ERROR: these dimensions are not yet implemented, for the moment smoothEllipticPDE is available for mydim=ndim=2\n";
+	#endif
+
+	}else{
+		typedef EOExpr<Mass> ETMass;   Mass EMass;   ETMass mass(EMass);
+		typedef EOExpr<Stiff> ETStiff; Stiff EStiff; ETStiff stiff(EStiff);
+		typedef EOExpr<Grad> ETGrad;   Grad EGrad;   ETGrad grad(EGrad);
+
+			const Real& c = this->regressionData_.getC();
+			const Eigen::Matrix<Real,2,2>& K = this->regressionData_.getK();
+			const Eigen::Matrix<Real,2,1>& b = this->regressionData_.getBeta();
+
+			MixedFERegressionBase<RegressionDataElliptic, Integrator, ORDER, mydim, ndim>::computeDegreesOfFreedom(c*mass+stiff[K]+dot(b,grad));
+	}
+	}
 
 };
 
@@ -822,6 +962,33 @@ public:
 	}
 	}
 
+	void computeDegreesOfFreedom(){
+
+		if(mydim!=2 || ndim !=2){
+
+		#ifdef R_VERSION_
+			Rprintf("ERROR: these dimensions are not yet implemented, for the moment smoothEllipticPDE is available for mydim=ndim=2");
+		#else
+			std::cout << "ERROR: these dimensions are not yet implemented, for the moment smoothEllipticPDE is available for mydim=ndim=2\n";
+		#endif
+
+		}else{
+			typedef EOExpr<Mass> ETMass;   Mass EMass;   ETMass mass(EMass);
+			typedef EOExpr<Stiff> ETStiff; Stiff EStiff; ETStiff stiff(EStiff);
+			typedef EOExpr<Grad> ETGrad;   Grad EGrad;   ETGrad grad(EGrad);
+
+			const Reaction& c = this->regressionData_.getC();
+			const Diffusivity& K = this->regressionData_.getK();
+			const Advection& b = this->regressionData_.getBeta();
+			const ForcingTerm& u= this->regressionData_.getU();
+
+			this->isSpaceVarying=TRUE;
+
+			MixedFERegressionBase<RegressionDataEllipticSpaceVarying, Integrator, ORDER, mydim, ndim>::computeDegreesOfFreedom(c*mass+stiff[K]+dot(b,grad));
+		}
+
+	}
+
 };
 
 
@@ -838,6 +1005,13 @@ public:
 		typedef EOExpr<Stiff> ETStiff; Stiff EStiff; ETStiff stiff(EStiff);
 	    MixedFERegressionBase<RegressionData, Integrator, ORDER, mydim, ndim>::apply(stiff, ForcingTerm(std::vector<Real>(1)));
 	}
+
+	void computeDegreesOfFreedom()
+	{
+		typedef EOExpr<Stiff> ETStiff; Stiff EStiff; ETStiff stiff(EStiff);
+			MixedFERegressionBase<RegressionData, Integrator, ORDER, mydim, ndim>::computeDegreesOfFreedom(stiff);
+	}
+
 
 };
 
@@ -871,6 +1045,29 @@ public:
 	}
 	}
 
+	void computeDegreesOfFreedom(){
+
+		if(mydim!=2 || ndim !=2){
+
+		#ifdef R_VERSION_
+			Rprintf("ERROR: these dimensions are not yet implemented, for the moment smoothEllipticPDE is available for mydim=ndim=2");
+		#else
+			std::cout << "ERROR: these dimensions are not yet implemented, for the moment smoothEllipticPDE is available for mydim=ndim=2\n";
+		#endif
+
+		}else{
+			typedef EOExpr<Mass> ETMass;   Mass EMass;   ETMass mass(EMass);
+			typedef EOExpr<Stiff> ETStiff; Stiff EStiff; ETStiff stiff(EStiff);
+			typedef EOExpr<Grad> ETGrad;   Grad EGrad;   ETGrad grad(EGrad);
+
+				const Real& c = this->regressionData_.getC();
+				const Eigen::Matrix<Real,2,2>& K = this->regressionData_.getK();
+				const Eigen::Matrix<Real,2,1>& b = this->regressionData_.getBeta();
+
+				MixedFERegressionBase<RegressionDataElliptic, Integrator, ORDER, mydim, ndim>::computeDegreesOfFreedom(c*mass+stiff[K]+dot(b,grad));
+		}
+
+	}
 
 };
 
@@ -904,6 +1101,32 @@ public:
 
 		MixedFERegressionBase<RegressionDataEllipticSpaceVarying, Integrator, ORDER, mydim, ndim>::apply(c*mass+stiff[K]+dot(b,grad), u);
 	}
+	}
+
+	void computeDegreesOfFreedom(){
+
+		if(mydim!=2 || ndim !=2){
+
+		#ifdef R_VERSION_
+			Rprintf("ERROR: these dimensions are not yet implemented, for the moment smoothEllipticPDE is available for mydim=ndim=2");
+		#else
+			std::cout << "ERROR: these dimensions are not yet implemented, for the moment smoothEllipticPDE is available for mydim=ndim=2\n";
+		#endif
+
+		}else{
+			typedef EOExpr<Mass> ETMass;   Mass EMass;   ETMass mass(EMass);
+			typedef EOExpr<Stiff> ETStiff; Stiff EStiff; ETStiff stiff(EStiff);
+			typedef EOExpr<Grad> ETGrad;   Grad EGrad;   ETGrad grad(EGrad);
+
+			const Reaction& c = this->regressionData_.getC();
+			const Diffusivity& K = this->regressionData_.getK();
+			const Advection& b = this->regressionData_.getBeta();
+			//const ForcingTerm& u= this->regressionData_.getU();
+
+			this->isSpaceVarying=TRUE;
+
+			MixedFERegressionBase<RegressionDataEllipticSpaceVarying, Integrator, ORDER, mydim, ndim>::computeDegreesOfFreedom(c*mass+stiff[K]+dot(b,grad));
+		}
 	}
 
 };

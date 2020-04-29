@@ -16,11 +16,13 @@
 //#include <iomanip>
 #include <limits>
 #include <vector>
+#include <stack>
+#include <set>
 
 // For debugging purposes
 //#include <Eigen/StdVector>
-//#include "Eigen/Eigen/Sparse"
-//#include "Eigen/Eigen/Dense"
+// #include "Eigen/Eigen/Sparse"
+// #include "Eigen/Eigen/Dense"
 //#define  EIGEN_MPL2_ONLY
 
 //Take the code from the linked RcppEigen
