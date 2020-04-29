@@ -1,0 +1,440 @@
+\documentclass[12pt]{article}
+\usepackage{enumerate}
+\usepackage{answers}
+\usepackage{setspace}
+\usepackage{graphicx}
+\newcommand{\Law}{\mathcal L}
+\usepackage{multicol}
+
+\usepackage{mathrsfs}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsthm}
+\usepackage{subfig}
+\usepackage{subfloat}
+
+% ##### begin NEW PKGs #####
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{dirtree}
+\usepackage{forest}
+\usepackage[toc,page]{appendix}
+
+\usepackage[english]{babel}
+% ##### end #####
+
+\usepackage{caption}
+\captionsetup{tableposition=top,figureposition=bottom,font=small}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{quoting}
+\usepackage{caption}
+\usepackage{yhmath}
+\usepackage{cancel}
+\usepackage{empheq}
+\usepackage{pgfplots}
+\usepackage{wrapfig}
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[english]{babel}
+\usepackage{lipsum}
+\usepackage{url}
+\usepackage[mathscr]{eucal}
+\usepackage[latin1]{inputenc}
+\usepackage{tcolorbox}
+\usepackage{relsize}
+\theoremstyle{plain}
+\usepackage{amsthm}
+\usepackage[colorlinks=true, linkcolor=red]{hyperref}
+\pagestyle{headings}
+% \theoremstyle{definition} per avere il corsivo nelle def, th, prop
+\usepackage{cleveref}
+\newtheorem{deff}{Definition}
+\newtheorem{teo}{Theorem}
+\newtheorem{prop}{Proposition}
+\newtheorem{oss}{Observation}
+\newtheorem{lemma}{Lemma}
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\diam}{diam}
+\DeclareMathOperator{\vspan}{span}
+\DeclareMathOperator{\dist}{dist}
+\DeclareMathOperator{\jac}{Jac}
+\DeclareMathOperator{\divv}{div}
+\DeclareMathOperator{\alt}{Alt}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\lip}{Lip}
+\DeclareMathOperator{\grad}{grad}
+\crefname{lemma}{Lemma}{Lemmas}
+\crefname{teorema}{Teorema}{Teoremi}
+
+
+\begin{document}
+
+\title{GSR-PDE  BOZZA}
+\author{
+\quad \\
+\quad \\
+\quad \\
+Alberto Colombo, Giulio Perin\\
+\quad \\
+\quad \\
+\quad \\
+\quad \\
+\quad \\
+\quad \\
+Tutor: Professor Laura Sangalli
+\date{}
+}
+
+
+\maketitle
+\quad \\
+\pagebreak
+\tableofcontents
+\pagebreak
+
+ %%% #### INTRODUCTION ####
+\section{Introduction}
+We propose an extension of the methodology presented in [6] allowing to model response variables having a distribution within the exponential family, including binomial, gamma and Poisson outcomes. Specifically, we maximize a penalized log-likelihood function with a roughness penalty term that involves a differential quantity of the spatial field computed over the domain of interest. We name the result- ing method GSR-PDE: generalized spatial regression with PDE penalization. To solve the estimation problem, we derive a functional version of the penalized iterative reweighted least-squares (PIRLS) algorithm [8]. This functional version of the PIRLS algorithm can be used to maximize penalized log- likelihoods with general quadratic penalties involving a functional parameter. Likewise Ramsay [5] and Sangalli et al., [6] the proposed models make use of finite elements over a triangulation of the domain of interest, to obtain accurate estimates of the spatial field.
+
+\pagebreak
+ %%% #### MATHEMATICAL MODELS ####
+\section{Mathematical Models}
+In this section we will describe the generalize linear model for spatial regularization with differentiation, and then we will show its numerical solution. The model and the algorithm for its resolution have been proposed and studied in the paper\cite{Wilhelm}. \\
+The basic model ( spatial regression with differential regularization ) are shown in \ref{appendix:SR}.
+
+\subsection{GSR-PDE Model}
+The SR-PDE model can be extended to any distribution within the exponential family, via a Generalized Linear Model framework.\\
+Let $Z_1,...Z_i$ be independent random variable having a distribution that belongs to the exponential family.\\
+Let $\mathbf{w_i} \in \mathbb{R}^q$ be the vector of covariates.\\
+The model of the expected value of $Z_i$, at location $\mathbf{p_i}$ is
+\begin{align}
+g(\mathbb{E} (Z_i) ) = \theta_i(\bm{\beta},f) = \mathbf{w_i^t}\bm{\beta} + f( \mathbf{p_i})  \quad i=1,...,n \label{eq:1}
+\end{align}
+where $g$ is the canonical link function associated with the considered distribution.\\
+We thus estimate $\bm{\beta}$ and $f$ maximizing the penalized log-likelihood:
+\begin{align}
+\sum_{i=1}^{n} (l(z_i,\mathbf{w_i},\bm{\beta}, f))^2 -\lambda \int_\Omega (Lf-u)^2d\mathbf{p} \label{eq:2}
+\end{align}
+where $l(;\theta_i)$ is the log-likelihood for the considered distribution.
+\quad \\
+\quad \\
+\quad \\
+This of course coincides with the mini- mization of the regularized least-squares in (2) when the considered distribution is Gaussian.\\
+On the other end, the exponential family includes most of the (continuous and discrete) well-known distributions; hence, this model generalization broadens enormously the applicability of the proposed technique. The functional in (4) is then optimized through iterative penalized least-squares.
+\pagebreak
+
+\subsection{ Functional PIRLS Algoritm }
+\subsubsection{Recall exponential family parametrization}
+We consider the following parametrization of a distribution from the exponential family:
+\begin{align*}
+f_Y(y;\theta,\phi)= exp\{y\theta - b(\theta)/a(\phi) + c(\phi,y)\} \quad \quad (5)
+\end{align*}
+where
+\begin{itemize}
+\item a(·), b(·) and c(·) are functions subject to some regularity constraints;
+\item $b'(\theta) = g^{-1}(\theta)$;
+\item we assume that $a(\phi) = \phi$, this being the case of the most common distributions in the exponential family;
+\item we denote by $V(\cdot)$ a function that satisfy var$(Y) = V(\mu)\phi;$
+\item the canonical parameter $\theta$ is a function of both $\bm{\beta} \in \mathbb{R}^q$ and $f \in \mathcal{F}$
+\end{itemize}
+\subsubsection{General Penalized log-Likelihood}
+Consider now the more general penalized log-likelihood
+\begin{align}
+\mathcal{L}_p(\bm{\beta},f) = \mathcal{L}(\bm{\beta},f)- \frac{\lambda}{2}m(f,f), \label{eq:3}
+\end{align}
+where $\mathcal{L}$ is the log-likelihood and $m(\cdot):\mathcal{F}\times\mathcal{F} \rightarrow \mathbb{R}$ is any bilinear, sym, s-d.p. form.\\
+\quad \\
+\quad \\
+In \cite{Wilhelm} is proved that the problem of maximizing Equation (3) with respect to $(\bm{\beta}, f )$ is equivalent to minimizing the following functional $\mathcal{J}_\lambda(\bm{\beta}, f )$ with respect to $(\bm{\beta}, f )$:
+
+\begin{align}
+\mathcal{J}_\lambda(\bm{\beta}, f ) = || \mathbf{V}^{-\frac{1}{2}}(\mathbf{z} - \bm{\mu} (\bm{\beta},f)) ||^2 + \lambda m(f,f) \label{eq:4}
+\end{align}
+where:
+\begin{itemize}
+\item $\mathbf{z} = (z_1,...,z_n)^t$ is the vector of observed data values;
+\item $\bm{\mu} = (\mu_1,...,\mu_n)^t$ is the mean vector given by (2), remember that  $\bm{\mu} = \bm{\mu}(\bm{\beta}, f )$ ;
+\item $\mathbf{W} \in \mathbb{R}^{n\times q}$ denotes the design matrix, whose ith row is given by the covariates $\mathbf{w_i}$;
+\item $\mathbf{f}_n=(f(\mathbf{p}_1),...f(\mathbf{p}_n))^t$ is the vector of evaluations of the spatial field f at the n spatial locations;
+\item $\mathbf{V}$ is an $n\times n$ diagonal matrix with entires $V(\mu_1),...,V(\mu_n)$ where $V(\cdot)$ is the variance function; $\mathbf{V}$ is considered as fixed.
+\end{itemize}
+Both $\mathbf{V}$ and $\bm{\mu}$ depend on $(\bm{\beta}, f )$. This suggest an iterative scheme for the solution of the estimation problem.
+\subsubsection{Iterative scheme for PIRLS}
+Let $\bm{\mu}^{(k)}$ be an estimae of $\bm{\mu}(\bm{\beta}, f )$ after k iteration. Then let us consider a first order development of $\bm{\mu}(\bm{\beta}, f )$ in the neighbourhood of the current value $\bm{\mu}^{(k)}$, and it is to be considered in the space $\mathbb{R}^q\times \mathcal{F}$ and yields the following quadratic approximation of $\mathcal{J}_\lambda(\bm{\beta}, f )$:
+\begin{align}
+\tilde{\mathcal{J}}_\lambda(\bm{\beta}, f ) = 
+|| (    \color{red}\mathbf{A^{(k)}} \color{black} )^{\frac{1}{2}}(\color{red}\mathbf{\tilde z}^{(k)}\color{black} - \mathbf{W}\bm{\beta} - \mathbf{f}_n) ||^2 + \lambda m(f,f) \label{eq:5}
+\end{align}
+where: \color{red} in rosso le variabili chiamate con nome diverso rispetto a Willihem \color{black}
+\begin{itemize}
+\item  $\color{red}\mathbf{A^{(k)}} \color{black} = (\mathbf{G^{(k)}})^{-2}(\mathbf{V^{(k)}})^{-1}$
+\item $\color{red}\mathbf{\tilde z}^{(k)}\color{black}$ is the current pseudo-data, $\color{red}\mathbf{\tilde z}^{(k)}\color{black} = \mathbf{G^{(k)}}(\mathbf{z} - \bm{\mu}^{(k)}) + \bm{\theta}^{(k)}$
+\item $\bm{\theta}^{(k)} = (g(\mu_1^{(k)}),..., g(\mu_n^{(k)}))$
+\end{itemize}
+\begin{algorithm}
+\caption{PIRS}\label{PIRS}
+\begin{algorithmic}[1]
+\Require $\bm{\mu}^{(0)}$ set to $\mathbf{z}$
+\While{$|| \bm{\mu}^{(k-1)}-\bm{\mu}^{(k)} ||< \epsilon$}
+\State Compute $\color{red}\mathbf{\tilde z}^{(k)}\color{black}$ and $\color{red}\mathbf{A^{(k)}} \color{black}$
+\State Find $\bm{\beta}^{(k+1)}$ and $\mathbf{f}^{(k+1)}$ that jointly min $\mathcal{J}_\lambda^{(k)}(\bm{\beta}, f )$
+\State Set $\bm{\mu}^{(k+1)} = g^{-1}(\mathbf{W}\bm{\beta}^{(k+1)} + \mathbf{f}_n^{k+1} )$
+\EndWhile\label{euclidendwhile}
+\end{algorithmic}
+\end{algorithm}
+\quad \\ 
+\subsubsection{Solution for PIRLS}
+Now we focus on the case where the roughness penalty has the form $m(f,f) =  \int_\Omega (\Delta f)^2d\mathbf{p} $.\\
+Analitical form of (\ref{eq:5}): 
+\begin{align}
+\tilde{\mathcal{J}}_\lambda(\bm{\beta}, f ) = 
+|| (    \color{red}\mathbf{A} \color{black} )^{\frac{1}{2}}(\color{red}\mathbf{\tilde z}\color{black} - \mathbf{W}\bm{\beta} - \mathbf{f}_n) ||^2 + \int_\Omega (\Delta f)^2d\mathbf{p} \label{eq:6}
+\end{align}
+To ensure the uniquness of the minimization problem with the new roughness penalty, we consider the space:
+\begin{align*}
+\mathcal{F} = H_{\mathbf{n}_0}^2 = \{f \in H^2 | (\nabla f)^t\mathbf{n}=0 \text{ on } \partial \Omega \}
+\end{align*}
+
+\pagebreak
+
+At this point we give the Characterization of the solution  to the penalized least-square problem. The existance and uniqueness of the solution are garanteed by the following proposition, proved in \cite{Wilhelm}.\\
+\begin{prop}If the design matrix $\mathbf{W}$ has full rank and the weight matrix $\mathbf{W}$ has strictly positive entries.
+Then exists a unique pair ($\tilde{\bm{\beta}},\tilde{f})\in \mathbb{R}^q \times H_{\mathbf{n}_0}^2$ which minimizes (\ref{eq:6}). 
+Moreover,
+\begin{itemize}
+\item $\tilde{\bm{\beta}} = (\mathbf{W}^t\mathbf{A}\mathbf{W})^{-1}\mathbf{W}^t\mathbf{A}(\tilde{\mathbf{z}}-\tilde{\mathbf{f}}_n)$
+\item $\tilde{f}$ satisfies:
+\begin{align}
+\mathbf{u}_n^t\mathbf{Q}\tilde{\mathbf{f}}_n + \lambda \int_\Omega (\Delta u)(\delta \tilde{f}) = \mathbf{u}^t\mathbf{Q}\tilde{\mathbf{z}} \quad \forall u \in H_{\mathbf{n}_0}^2 \label{eq:7}
+\end{align}
+\end{itemize}
+where $\mathbf{H} =\mathbf{W}(\mathbf{W}^t\mathbf{A}\mathbf{W})^{-1}\mathbf{W}^t\mathbf{A}$, $\mathbf{Q} =\mathbf{I} - \mathbf{H} $, and $\mathbf{u}$ vector of the function $ u \in  \mathcal{F} $ valutated at the $n$ locations.
+\end{prop}
+\quad \\
+\subsubsection{Variational Problem}
+Given $\tilde{\mathbf{f}}$ , it is easy to compute $\tilde{\bm{\beta}}$, so the crucial point is to find $\tilde{f}$ that satisfied (\ref{eq:7}). For this purpose introduce the space:
+\begin{align*}
+H^1_{\mathbf{n}_0} = \{f \in H^1 | (\nabla f)^t\mathbf{n}=0 \text{ on } \partial \Omega \}.
+\end{align*}
+Then, the problem in (\ref{eq:7}) is reformulated in finding $(\tilde{f}, \tilde{h}) \in H^1_{\mathbf{n}_0}(\Omega)  \times H^1_{\mathbf{n}_0}(\Omega) $ such that 
+\begin{equation} \label{eq:8}
+\begin{split}
+\mathbf{u}_n^t\mathbf{Q}\tilde{\mathbf{f}}_n + \lambda \int_\Omega (\nabla u)(\nabla \tilde{h}) &=  \mathbf{u}_n^t\mathbf{Q}\tilde{\mathbf{z}}  \quad \\ 
+- \int_\Omega (\nabla \tilde{f})^t\nabla v = \int_\Omega \tilde{h}v. 
+\end{split}
+\end{equation}\\
+for any $(u,v) \in H^1_{\mathbf{n}_0}(\Omega)  \times H^1_{\mathbf{n}_0}(\Omega)$ \\
+\quad \\ 
+The next step is to applied the finite element method to construct a finite dimensional subspace of $H^1_{\mathbf{n}_0}(\Omega)$, and hence to compute an approximate solution to Equation (\ref{eq:8}).
+
+
+\pagebreak
+
+\subsection{Numerical solution with FEM}
+The solution to the variational problem (10) cannot be found analytically. We hence use advanced numerical discretization procedures via a mixed finite element formulation \ref{appendix:FEM}.\\
+The functions and integrals in Equation (10) can be approximated using functions in the finite element space $\mathcal{F}_K$.\\
+\quad \\ 
+\underline{\textbf{Pb:}} Find $(\tilde{f}, \tilde{h}) \in \mathcal{F}_K \times \mathcal{F}_K$, for any $(u,v)\in \mathcal{F}_K \times \mathcal{F}_K$ that satisfy (10), where the intergrals are computed over $\Omega_{\mathcal{T}}$\\
+\quad \\
+Let $\bm{\Psi}$ be the $n \times K$ matrix of $K$ basis at $n$ locations $\mathbf{p}_1,...,\mathbf{p}_n$    
+\[\begin{bmatrix}
+\bm{\psi}^t(\mathbf{p}_1)\\
+\vdots\\
+\bm{\psi}^t(\mathbf{p}_n)
+\end{bmatrix}\]
+and define the mass and stiffness matrices:
+\begin{align*}
+\mathbf{R}_0 = \int_{\Omega_{\mathcal{T}}} \bm{\psi} \bm{\psi}^t, \quad \mathbf{R}_1 =  \int_{\Omega_{\mathcal{T}}} (\nabla \bm{\psi})^t(\nabla \bm{\psi})
+\end{align*}
+
+\begin{prop}The discrete counter part of Equation (\ref{eq:8}) is given by the system
+\begin{gather}
+ \begin{bmatrix} -\bm{\Psi}^t\mathbf{Q}\bm{\Psi} & \lambda \mathbf{R}_{1} \\ 
+			    \lambda \mathbf{R}_{1} & \lambda \mathbf{R}_{0}
+\end{bmatrix}
+\begin{bmatrix}
+\tilde{\mathbf{f}} \\
+\tilde{\mathbf{h}}
+\end{bmatrix}
+=
+\begin{bmatrix}
+-\bm{\Psi}^t\mathbf{Q}\tilde{\mathbf{z}} \\
+\mathbf{0}
+\end{bmatrix} \label{eq:9}
+\end{gather}
+which admits a unique pair of solutions $\tilde{\mathbf{f}}, \tilde{\mathbf{h}}$ that are respectively the coefficients of the basis expansion of  $\tilde{f}$ and $\tilde{h}$
+\end{prop}
+Then using this notation, rewriting the integral, using the functional version of the PIRLS algorithm and the \textbf{Prop.1} \textbf{Prop.2} [\ref{appendix:Notions}] we obtain the following expressions for the maximizers $\bm{\hat{\beta}}$ and $\hat{\mathbf{f}}$ of the penalized log-likelihood ($\ref{eq:2}$):
+\begin{align}
+\bm{\hat{\beta}} = (\mathbf{W}^t\mathbf{A}\mathbf{W})^{-1}\mathbf{W}^t\mathbf{A}(\mathbf{I}-\mathbf{S})\tilde{\mathbf{z}}  \label{eq:10}\\
+\hat{\mathbf{f}} = (\bm{\Psi}^t\mathbf{Q}\bm{\Psi} + \lambda \mathbf{P})^{-1}\bm{\Psi}^t\mathbf{Q}\tilde{\mathbf{z}} \quad \label{eq:11}
+\end{align}
+and the vector of evaluations of $\hat{\mathbf{f}}$ at the $n$ data locations is given by
+\begin{align*}
+\hat{\mathbf{f}}_n =\bm{\Psi}\hat{\mathbf{f}} = \mathbf{S}\tilde{\mathbf{z}}
+\end{align*}
+where the vector of pseudo-data $\tilde{\mathbf{z}}$, and the matrices $\mathbf{A}$, $\mathbf{Q}$ and $\mathbf{S}$  are those obtained at the convergence of the PIRLS algorithm.\\
+/[ FROM NEGRI pag10 /] {\color{red} "Solving the linear system (\ref{eq:9}) is fast due to the sparsity of the matrix in the left-hand side. For this reason, the algorithm does not find the solution f directly from the formula (\ref{eq:11}), but it solves the linear system (\ref{eq:9}) even if it is typically large." }
+
+\pagebreak
+\subsection{Selection of the smoothing parameter}
+Smooth parameter selection by cross validation: $GCV(\lambda)$ 
+
+
+ %%% #### CODE STRUCTURE ####
+\section{Code Structure}
+\subsection{Initial \textsf{R} code}
+The basic functions for the numerical implementation in \textsf{R} are:
+\begin{itemize}
+\item  \verb|gam_fem_fit.R| : It estimate the model given the $\lambda$ parameter implementing the \verb|gam.fem.fit| function;
+\item  \verb|gam_fem.R|: It estimate the model using the $GCV(\lambda)$ method implementing the \verb|gam.fem| function.
+\end{itemize}
+The second function depends on the first one, so we will start to describe the \verb|gam.fem| function.
+\begin{algorithm}
+\caption{gam.fem.fit}\label{gam.fem.fit}
+\begin{algorithmic}[1]
+\Require $\lambda$, $family\_type$, $\mathbf{z}$, $\mathbf{W}$, $\bm{\mu}_0$
+\State Check Input
+\State Build up $\mathbf{R}_0$ using \verb|mass()| function;
+\State Build up $\mathbf{R}_1$ using \verb|stiff1()| function;
+\State Build up $\mathbf{P}$ that depend on $family\_type$;
+\State Build up $\bm{\Psi}$, $\mathbf{S}$ 
+\State Initialization of the parameters: $\hat{\mathbf{f}}_n$, $\bm{\hat{\mu}}$, $\bm{\hat{\beta}}$
+\For{$i=0:max\_steps$}
+\State asd
+\EndFor \\
+\Return $felsplobj$, $laplacefd$
+\label{gam.fem.fit}
+\end{algorithmic}
+\end{algorithm}
+
+\pagebreak
+\subsection{C\texttt{++} code}
+
+\pagebreak
+
+ %%% #### RESULTS ####
+\section{Results}
+\subsection{Simulation one}
+\subsection{Simulation two}
+\subsection{\textsf{R}/C\texttt{++} Simulation comparison}
+ \pagebreak
+ 
+ %%% #### BIBLIOGRAPHY ####
+\begin{thebibliography}{9}
+\bibitem{base}
+Mohammadi and Wit; \textit{BDgraph: An R Package for Bayesian Structure Learning in Graphical Models}
+
+\bibitem{Wilhelm}
+Matthieu Wilhelm \& Laura M. Sangalli; \textit{Generalized spatial regression with differential regularization}, Journal of Statistical Computation and Simulation. 86:13, 2497-2518.
+\end{thebibliography}
+\pagebreak
+
+%%% #### APPENDICES ####
+\begin{appendices}
+
+%## 	A 
+\section{SR-PDE Model}
+\label{appendix:SR}
+Folowing is shown the basic formulation of SR-PDE model ( Spatial regression with differential regularization ). \\
+Let $\mathbf{p_1},...,\mathbf{p_n} \in \Omega \subset \mathbb{R}^2$ be $n$ data  locations. \\
+Let $z_i \in \mathbb{R}$ be the value of a variable of interest observed at $\mathbf{p_i}$. \\
+Let $\mathbf{w_i} \in \mathbb{R}^q$ be the vector of covariates associated with $z_i \in \mathbb{R}$ at $\mathbf{p_i}$.\\
+We consider the following semiparametric generalized additive model:
+\begin{align}
+z_i = \mathbf{w_i^t}\bm{\beta} + f(\mathbf{p_i}) + \epsilon_i, \quad i=1,...,n 
+\end{align}
+where
+\begin{itemize}
+\item $\bm{\beta} \in \mathbb{R}^q$ is an unknown vector of regression coefficients;
+\item $f:\Omega \rightarrow \mathbb{R}$ is an unknown deterministic field that captures the spatial structure of the phenomenon under study
+\item $\epsilon_1,...\epsilon_n$ random errors, with zero mean and fi- nite variance.
+\end{itemize}
+The propose is to estimate the unknown $\bm{\beta}$ and $f$ by minimizing the regularized least-square functional 
+\begin{align}
+\sum_{i=1}^{n} ( z_i - \mathbf{w_i^t}\bm{\beta} - f(\mathbf{p_i}))^2 +\lambda \int_\Omega (\Delta f)^2d\mathbf{p}  
+\end{align}
+where $\lambda$ is a positive smoothing parameter and $\Delta$ denotes the Laplace operator.\\
+\quad \\
+%## 	B
+\section{Finite Elements}
+\label{appendix:FEM}
+To construct a finite element space, we start by partitioning the domain of interest into small subdomains...
+\pagebreak
+%## 	C
+\section{Theoretical Notions}
+\label{appendix:Notions}
+$\mathbf{S}$ depend on the matrices $\mathbf{P}$, $\mathbf{R}_0$ and $\mathbf{R}_1$
+\begin{align*}
+\mathbf{S} = \bm{\Psi}(\bm{\Psi}^t\mathbf{Q}\bm{\Psi} + \lambda \mathbf{P})^{-1}\bm{\Psi}^t\mathbf{Q} \qquad \quad \\ 
+\mathbf{P} = \mathbf{R}_1 \mathbf{R}_0^{-1} \mathbf{R}_1 \qquad \qquad \qquad \quad  \\
+\mathbf{R}_0 = \int_{\Omega_{\mathcal{T}}} \bm{\psi} \bm{\psi}^t, \quad \mathbf{R}_1 =  \int_{\Omega_{\mathcal{T}}} (\nabla \bm{\psi})^t(\nabla \bm{\psi})
+\end{align*}
+$\mathbf{R}_0, \mathbf{R}_1, \mathbf{P}$ are called respectively the mass matrix, stiffness matrix and penalty matrix.
+
+%## 	D
+\section{Technical Notion: From Theory to Implementation}
+\label{appendix:TN}
+The matrix $\mathbf{A}$ are computed as
+
+
+
+%## 	E
+\section{Design Pattern}
+\label{appendix:DP}
+Basic concepts about Design Pattern.
+
+\pagebreak
+
+\end{appendices}
+
+
+%%% #### FOREST USAGE ####
+\iffalse
+\begin{forest}
+  for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    edge path={
+      \noexpand\path [draw, \forestoption{edge}]
+      (!u.south west) +(7.5pt,0) |- node[fill,inner sep=1.25pt] {} (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+      if n=1
+        {insert before={[,phantom]}}
+        {}
+    },
+    fit=band,
+    before computing xy={l=15pt},
+  }
+[Allfunctions.R
+  [smooth.FEM.fd]
+  [create.FEM.basis]
+  [basisfd]
+  [makenodes]
+  [mass]
+  [stiff1]
+  [tricoefCal]
+  [insideIndex]
+  [plot.FEM]
+  [smooth.FEM.fd.GCV]
+  [smooth.FEM.fd.Covar]
+  [smooth.FEM.fd.Covar.GCV]
+]
+\end{forest}
+\fi
+
+
+
+\end{document}
