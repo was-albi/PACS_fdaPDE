@@ -76,6 +76,8 @@ class FPIRLS_Base {
 
     virtual Real var_function(const Real& mu) = 0; // V(mu)
 
+    virtual inline Real dev_function(const Real&mu, const Real& x) = 0; //deviation function: used as norm in GCV
+
 
   public:
 
@@ -180,6 +182,8 @@ class FPIRLS_Bernoulli : public FPIRLS <InputHandler, Integrator, ORDER, mydim, 
 
     inline Real var_function(const Real& mu){ return(mu*(1-mu)); }
 
+    inline Real dev_function(const Real& mu, const Real& x) {return (x == 0)? 2*log(1/(1-mu)) : 2*log(1/mu);}
+
   //  void initialize_mu(const VectorXr& y);
 
   public:
@@ -203,6 +207,7 @@ template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UI
 
       inline Real var_function(const Real& mu){ return mu ;}
 
+      inline Real dev_function(const Real&mu, const Real& x){ return (x>0) ? x*log(x/mu) - (x-mu): mu; }
     /*  void initialize_mu(const VectorXr & y) {
       this->mu_ = y;} // It is different for binary or non-binary outcomes
     */
@@ -227,6 +232,8 @@ template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UI
 
       inline Real var_function(const Real& mu){ return mu*mu ;}
 
+      inline Real dev_function(const Real&mu, const Real& x){ return 2*(((x-mu)/mu)*log(x/mu)); }
+
     /*  void initialize_mu(const VectorXr & y) {
       this->mu_ = y;} // It is different for binary or non-binary outcomes
     */
@@ -250,6 +257,8 @@ template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UI
       inline Real inv_link(const Real& theta){ return theta; }
 
       inline Real var_function(const Real& mu){ return 1 ;}
+
+      inline Real dev_function(const Real&mu, const Real& x){ return (x-mu)*(x-mu);}
 
     /*  void initialize_mu(const VectorXr & y) {
       this->mu_ = y;} // It is different for binary or non-binary outcomes

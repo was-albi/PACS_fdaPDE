@@ -450,7 +450,7 @@ VectorXr y = inputData_.getInitialObservations();
 Real GCV_value = 0;
 
 for(UInt j=0; j < y.size();j++)
-  GCV_value += (y[j]-mu_[lambda_index][j])*(y[j]-mu_[lambda_index][j]);  //norm computation
+  GCV_value += dev_function(mu_[lambda_index][j], y[j]); //norm computation
 
   saving_filename = "DIMENSIONE_GCV_value";
   saving_filename = saving_filename + ".txt";

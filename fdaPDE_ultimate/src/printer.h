@@ -10,6 +10,7 @@ class printer{
 
 
 // std::string directory = "/Users/giuliopn/PACSworkspace3/PACSworkspace/GAM_tests/debugging_output/CPP/";
+// std::string directory = "/Users/giuliopn/PACSworkspace4/PACS_fdaPDE/GAM_tests/debugging_output/CPP/";
 
 // std::string directory = "/home/alb/Scrivania/PACS/Git_Folder/debugging_output/CPP/";
 
@@ -21,7 +22,7 @@ static void SaveMatrixXr(std::string& name_txt, const MatrixXr & mat){
 		constexpr UInt CONSTPREC = 16;
 
 
-		std::string directory = "/home/alb/Scrivania/PACS/Git_Folder/debugging_output/CPP/";
+		std::string directory = "/Users/giuliopn/PACSworkspace4/debugging_output/CPP/";
 		name_txt = directory + name_txt;
 
 		std::ofstream FileDataMatrix(name_txt);
@@ -43,7 +44,7 @@ static void SaveDimension(std::string& name_txt, const std::vector<T> & vec){
 		constexpr UInt CONSTPREC = 16;
 
 
-		std::string directory = "/home/alb/Scrivania/PACS/Git_Folder/debugging_output/CPP/";
+		std::string directory = "/Users/giuliopn/PACSworkspace4/debugging_output/CPP/";
 		name_txt = directory + name_txt;
 
 		std::ofstream FileDataMatrix(name_txt);
@@ -58,7 +59,7 @@ static void saveVectorXr(std::string& name_txt, const VectorXr & vect){
    	const UInt size = vect.size();
 		constexpr UInt CONSTPREC = 16;
 
-	    std::string directory = "/home/alb/Scrivania/PACS/Git_Folder/debugging_output/CPP/";
+	    std::string directory =  "/Users/giuliopn/PACSworkspace4/debugging_output/CPP/";
 		name_txt = directory + name_txt;
 
 	std::ofstream File(name_txt);

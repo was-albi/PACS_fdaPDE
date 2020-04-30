@@ -107,9 +107,33 @@ if(class(FEMbasis$mesh) == "mesh.2D"){
             method.phi=method.phi, scale.param=scale.param, tune=tune, weight=weight, threshold=threshold )
   
     numnodes = nrow(FEMbasis$mesh$nodes)
-  } else {
-    print("not implemented yet")
+  } else if(class(FEMbasis$mesh) == 'mesh.2.5D'){
+    
+    bigsol = NULL  
+    print('C++ Code Execution')
+    if(!is.null(locations))
+      stop("The option locations!=NULL for manifold domains is currently not implemented")
+    bigsol = CPP_smooth.manifold.FEM.GLM.basis(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
+            covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
+            BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, FAMILY=fam,
+            mu0 = mu0, max.steps=max.steps, mesh.const=mesh.const,
+            method.phi=method.phi, scale.param=scale.param, tune=tune, weight=weight, threshold=threshold )
+    
+    numnodes = FEMbasis$mesh$nnodes
+    
+  }else if(class(FEMbasis$mesh) == 'mesh.3D'){
+      
+    bigsol = NULL  
+    print('C++ Code Execution')
+    bigsol = CPP_smooth.volume.FEM.GLM.basis(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
+            covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
+            BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, FAMILY=fam,
+            mu0 = mu0, max.steps=max.steps, mesh.const=mesh.const,
+            method.phi=method.phi, scale.param=scale.param, tune=tune, weight=weight, threshold=threshold )
+    
+    numnodes = FEMbasis$mesh$nnodes
   }
+    
   # Estimated functions (smooth fields)
   f = bigsol[[1]][1:numnodes,]
   g = bigsol[[1]][(numnodes+1):(2*numnodes),]# laplacian(f)

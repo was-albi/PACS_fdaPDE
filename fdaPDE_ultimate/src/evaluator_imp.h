@@ -85,7 +85,7 @@ void Evaluator<ORDER,2,2>::eval(const std::vector<Point> points, const VectorXr&
 	constexpr UInt Nodes = 3*ORDER;
 	Element<Nodes,2,2> current_element;
 	UInt length = points.size();
-
+	result.resize(length);
 	Element<Nodes,2,2> starting_element;
 
 	Point current_point;
@@ -190,6 +190,45 @@ void Evaluator<ORDER,2,3>::evalWithInfo(Real* X, Real *Y, Real *Z, UInt length, 
 }
 
 template <UInt ORDER>
+void Evaluator<ORDER,2,3>::eval( const std::vector<Point> points, const VectorXr& coef, bool redundancy, VectorXr& result, std::vector<bool>& isinside)
+{
+
+	constexpr UInt Nodes = 3*ORDER;
+	Element<Nodes,2,3> current_element;
+	UInt length = points.size();
+	result.resize(length);
+
+	Point current_point;
+	Eigen::Matrix<Real,Nodes,1> coefficients;
+	UInt search = mesh_.getSearch();
+
+	for (int i = 0; i<length; ++i) {
+		current_point = points[i];
+
+		if (search == 1) { //use Naive search
+			current_element = mesh_.findLocationNaive(current_point);
+		} else if (search == 2)  { //use Tree search (default)
+			current_element = mesh_.findLocationTree(current_point);
+		}
+
+		if(current_element.getId() == Identifier::NVAL) {
+			isinside[i]=false;
+		} else {
+			isinside[i]=true;
+			for (int j=0; j<(Nodes); ++j) {
+				coefficients[j] = coef[current_element[j].getId()];
+			}
+			// std::cout << "i : " << i << " current element id: " << current_element.getId() << std::endl;
+			result[i] = evaluate_point<Nodes,2,3>(current_element, current_point, coefficients);
+		}
+	} //end of for loop
+
+}
+
+
+
+
+template <UInt ORDER>
 void Evaluator<ORDER,3,3>::eval(Real* X, Real *Y,  Real *Z, UInt length, const Real *coef, bool redundancy, Real* result, std::vector<bool>& isinside)
 {
 
@@ -251,6 +290,47 @@ void Evaluator<ORDER,3,3>::evalWithInfo(Real* X, Real *Y, Real *Z, UInt length, 
 		}
 	} //end of for loop
 }
+
+template <UInt ORDER>
+void Evaluator<ORDER,3,3>::eval( const std::vector<Point> points, const VectorXr& coef, bool redundancy, VectorXr& result, std::vector<bool>& isinside)
+{
+
+	constexpr UInt Nodes = 6*ORDER-2;
+	Element<Nodes,3,3> current_element;
+	UInt length = points.size();
+	result.resize(length);
+
+	Point current_point;
+	Eigen::Matrix<Real,Nodes,1> coefficients;
+	UInt search = mesh_.getSearch();
+
+	for (int i = 0; i<length; ++i) {
+		current_point = points[i];
+
+		if (search == 1) { //use Naive search
+			current_element = mesh_.findLocationNaive(current_point);
+		} else if (search == 2)  { //use Tree search (default)
+			current_element = mesh_.findLocationTree(current_point);
+		}
+
+
+		if(current_element.getId() == Identifier::NVAL) {
+			isinside[i]=false;
+		} else {
+			isinside[i]=true;
+			for (int j=0; j<(Nodes); ++j) {
+				coefficients[j] = coef[current_element[j].getId()];
+			}
+			// std::cout << "i : " << i << " current element id: " << current_element.getId() << std::endl;
+			result[i] = evaluate_point<Nodes,3,3>(current_element, current_point, coefficients);
+		}
+	} //end of for loop
+
+}
+
+
+
+
 
 template <UInt ORDER>
 void Evaluator<ORDER, 2, 2>::integrate(UInt** incidenceMatrix, UInt nRegions, UInt nElements, const Real *coef, Real* result)

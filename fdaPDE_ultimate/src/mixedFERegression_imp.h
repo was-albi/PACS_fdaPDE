@@ -452,7 +452,6 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::computeD
 
 	this->_dof.resize(regressionData_.getLambda().size());
 
-
 	for(UInt i = 0; i<regressionData_.getLambda().size(); ++i)
 	{
 		Real lambda = regressionData_.getLambda()[i];
@@ -463,6 +462,10 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::computeD
 	 printer::SaveDimension(saving_filename,test_boi);
 
 		this->buildMatrixNoCov(psi_, R1_lambda, R0_lambda);
+
+		if(regressionData_.getGCVmethod() == 2){// Stochastic GCV
+			this->system_factorize();
+		}
 
 		saving_filename = "prova_cdof_4";
 	 saving_filename = saving_filename + ".txt";

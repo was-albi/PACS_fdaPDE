@@ -46,7 +46,7 @@ class Evaluator<ORDER,2,2>
 
 		//! A member overloading of eval() for c++ internal usage
 		/*!
-		\param points a vecotr of points to evaluate.
+		\param points a vector of points to evaluate.
 		\param coef a VecotorXr reference to the vector of coefficients of the solution, the value in position i
 		is associated to the basis \phi(i)
 		\param fast a boolean that specifies if the algorithm is completely based on the walking
@@ -98,6 +98,18 @@ class Evaluator<ORDER,2,3>
 		void eval(Real* X, Real *Y, Real *Z, UInt length, const Real *coef, bool redundancy, Real* result, std::vector<bool>& isinside);
 		void evalWithInfo(Real* X, Real *Y, Real *Z, UInt length, const Real *coef, bool redundancy, Real* result, std::vector<bool>& isinside, const std::vector<UInt> & element_id, Real **barycenters);
 
+		//! A member overloading of eval() for c++ internal usage
+		/*!
+		\param points a vector of points to evaluate.
+		\param coef a VecotorXr reference to the vector of coefficients of the solution, the value in position i
+		is associated to the basis \phi(i)
+		\param fast a boolean that specifies if the algorithm is completely based on the walking
+				algorithm (can miss locations in case of non convex structures)
+		\param result a VecotorXr reference to an already allocated memory space, where the evaluations
+		will be stored
+		*/
+		void eval(const std::vector<Point> points, const VectorXr& coef, bool redundancy, VectorXr& result, std::vector<bool>& isinside);
+
 		//! A member that computes the integral over regions divided by the measure of the region in a mesh,
 		//  given the bases' coefficients.
 		/*!
@@ -141,6 +153,20 @@ class Evaluator<ORDER,3,3>
 		*/
 		void eval(Real* X, Real *Y, Real *Z, UInt length, const Real *coef, bool redundancy, Real* result, std::vector<bool>& isinside);
 		void evalWithInfo(Real* X, Real *Y, Real *Z, UInt length, const Real *coef, bool redundancy, Real* result, std::vector<bool>& isinside, const std::vector<UInt> & element_id, Real **barycenters);
+		
+
+		//! A member overloading of eval() for c++ internal usage
+		/*!
+		\param points a vector of points to evaluate.
+		\param coef a VecotorXr reference to the vector of coefficients of the solution, the value in position i
+		is associated to the basis \phi(i)
+		\param fast a boolean that specifies if the algorithm is completely based on the walking
+				algorithm (can miss locations in case of non convex structures)
+		\param result a VecotorXr reference to an already allocated memory space, where the evaluations
+		will be stored
+		*/
+		void eval(const std::vector<Point> points, const VectorXr& coef, bool redundancy, VectorXr& result, std::vector<bool>& isinside);
+
 		//! A member that computes the integral over regions divided by the measure of the region in a mesh,
 		//  given the bases' coefficients.
 		/*!
