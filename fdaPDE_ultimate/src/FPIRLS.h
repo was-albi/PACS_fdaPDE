@@ -68,15 +68,15 @@ class FPIRLS_Base {
     void compute_GCV(UInt& lambda_index); // compute the GCV value for a given lambda
 
     // link and other functions, it can be extended to handle vector of parameters
-    virtual Real link(const Real& mu) = 0; // g(.)
+    virtual Real link(const Real& mu)const = 0; // g(.)
 
-    virtual Real link_deriv(const Real& mu) = 0; // g'(.)
+    virtual Real link_deriv(const Real& mu)const = 0; // g'(.)
 
-    virtual Real inv_link(const Real& theta) = 0; // g^-1(.)
+    virtual Real inv_link(const Real& theta)const = 0; // g^-1(.)
 
-    virtual Real var_function(const Real& mu) = 0; // V(mu)
+    virtual Real var_function(const Real& mu)const = 0; // V(mu)
 
-    virtual inline Real dev_function(const Real&mu, const Real& x) = 0; //deviation function: used as norm in GCV
+    virtual Real dev_function(const Real&mu, const Real& x)const = 0; //deviation function: used as norm in GCV
 
 
   public:
@@ -169,20 +169,23 @@ class FPIRLS_Scaled: public FPIRLS <InputHandler, Integrator, ORDER, mydim, ndim
 
 };
 
+
+//------------- Family Distributions Spcecification ----------------
+
 // Bernoulli
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
 class FPIRLS_Bernoulli : public FPIRLS <InputHandler, Integrator, ORDER, mydim, ndim> {
 
   protected:
-    inline Real link(const Real& mu){ return log(mu/(1 - mu)); }
+    inline Real link(const Real& mu)const{ return log(mu/(1 - mu)); }
 
-    inline Real inv_link(const Real& theta){ return 1/(1 + exp(-theta)); }
+    inline Real inv_link(const Real& theta)const{ return 1/(1 + exp(-theta)); }
 
-    inline Real link_deriv(const Real& mu){ return 1/(mu*(1-mu)); }
+    inline Real link_deriv(const Real& mu)const{ return 1/(mu*(1-mu)); }
 
-    inline Real var_function(const Real& mu){ return(mu*(1-mu)); }
+    inline Real var_function(const Real& mu)const{ return(mu*(1-mu)); }
 
-    inline Real dev_function(const Real& mu, const Real& x) {return (x == 0)? 2*log(1/(1-mu)) : 2*log(1/mu);}
+    inline Real dev_function(const Real& mu, const Real& x)const{return (x == 0)? 2*log(1/(1-mu)) : 2*log(1/mu);}
 
   //  void initialize_mu(const VectorXr& y);
 
@@ -193,21 +196,73 @@ class FPIRLS_Bernoulli : public FPIRLS <InputHandler, Integrator, ORDER, mydim, 
 };
 
 
+// Probit
+template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
+class FPIRLS_Probit : public FPIRLS <InputHandler, Integrator, ORDER, mydim, ndim> {
+  private: 
+    Real erf_inv(const Real& x)const;
+  
+  protected:
+    inline Real link(const Real& mu)const{ return erf_inv(mu); }
+
+    inline Real inv_link(const Real& theta)const{ return erf(theta); }
+
+    inline Real link_deriv(const Real& mu)const{ return 1/(sqrt(2*M_PI)) * exp(- 0.5*(mu*mu)) ;}
+
+    inline Real var_function(const Real& mu)const{ return (mu*(1-mu)); }
+
+    inline Real dev_function(const Real& mu, const Real& x)const{return (x == 0)? 2*log(1/(1-mu)) : 2*log(1/mu);}
+
+  //  void initialize_mu(const VectorXr& y);
+
+  public:
+
+    FPIRLS_Probit(const MeshHandler<ORDER,mydim,ndim>& mesh, InputHandler& inputData, VectorXr mu0):
+      FPIRLS<InputHandler, Integrator, ORDER, mydim, ndim>(mesh, inputData, mu0){};
+};
+
+
+// cLogLog
+template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
+class FPIRLS_cLogLog : public FPIRLS <InputHandler, Integrator, ORDER, mydim, ndim> {
+
+  protected:
+    inline Real link(const Real& mu)const{ return log(-log(1-mu)); }
+
+    inline Real inv_link(const Real& theta)const{ return  1-exp(-exp(theta)) ; }
+
+    inline Real link_deriv(const Real& mu)const{ return  -1/(log(1-mu))*1/(1-mu); }
+
+    inline Real var_function(const Real& mu)const{ return(mu*(1-mu)); }
+
+    inline Real dev_function(const Real& mu, const Real& x)const{return (x == 0)? 2*log(1/(1-mu)) : 2*log(1/mu);}
+
+  //  void initialize_mu(const VectorXr& y);
+
+  public:
+
+    FPIRLS_cLogLog(const MeshHandler<ORDER,mydim,ndim>& mesh, InputHandler& inputData, VectorXr mu0):
+      FPIRLS<InputHandler, Integrator, ORDER, mydim, ndim>(mesh, inputData, mu0){};
+};
+
+
+
+
 // Poisson
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
     class FPIRLS_Poisson : public FPIRLS <InputHandler, Integrator, ORDER, mydim, ndim> {
 
     protected:
 
-      inline Real link(const Real& mu){ return log(mu); }
+      inline Real link(const Real& mu)const{ return log(mu); }
 
-      inline Real link_deriv(const Real& mu){ return 1/mu; }
+      inline Real link_deriv(const Real& mu)const{ return 1/mu; }
 
-      inline Real inv_link(const Real& theta){ return exp(theta); }
+      inline Real inv_link(const Real& theta)const{ return exp(theta); }
 
-      inline Real var_function(const Real& mu){ return mu ;}
+      inline Real var_function(const Real& mu)const{ return mu ;}
 
-      inline Real dev_function(const Real&mu, const Real& x){ return (x>0) ? x*log(x/mu) - (x-mu): mu; }
+      inline Real dev_function(const Real&mu, const Real& x)const{ return (x>0) ? x*log(x/mu) - (x-mu): mu; }
     /*  void initialize_mu(const VectorXr & y) {
       this->mu_ = y;} // It is different for binary or non-binary outcomes
     */
@@ -218,21 +273,46 @@ template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UI
 
 };
 
+// Exponential
+template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
+    class FPIRLS_Exponential : public FPIRLS <InputHandler, Integrator, ORDER, mydim, ndim> {
+
+    protected:
+
+      inline Real link(const Real& mu)const{ return -1/mu; }
+
+      inline Real link_deriv(const Real& mu)const{ return 1/(mu*mu); }
+
+      inline Real inv_link(const Real& theta)const{ return - 1/theta; }
+
+      inline Real var_function(const Real& mu)const{ return mu*mu ;}
+
+      inline Real dev_function(const Real&mu, const Real& x)const{ return 2*(((x-mu)/mu)*log(x/mu)); }
+
+    public:
+
+    FPIRLS_Exponential(const MeshHandler<ORDER,mydim,ndim>& mesh, InputHandler& inputData, VectorXr mu0):
+      FPIRLS<InputHandler, Integrator, ORDER, mydim, ndim>(mesh, inputData, mu0){};
+
+};
+
+//------------- Scaled Distributions ----------
+
 // Gamma
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
     class FPIRLS_Gamma : public FPIRLS_Scaled <InputHandler, Integrator, ORDER, mydim, ndim> {
 
     protected:
 
-      inline Real link(const Real& mu){ return - 1/mu ; }
+      inline Real link(const Real& mu)const{ return - 1/mu ; }
 
-      inline Real link_deriv(const Real& mu){ return 1/(mu*mu); }
+      inline Real link_deriv(const Real& mu)const{ return 1/(mu*mu); }
 
-      inline Real inv_link(const Real& theta){ return - 1/theta; }
+      inline Real inv_link(const Real& theta)const{ return - 1/theta; }
 
-      inline Real var_function(const Real& mu){ return mu*mu ;}
+      inline Real var_function(const Real& mu)const{ return mu*mu ;}
 
-      inline Real dev_function(const Real&mu, const Real& x){ return 2*(((x-mu)/mu)*log(x/mu)); }
+      inline Real dev_function(const Real&mu, const Real& x)const{ return 2*(((x-mu)/mu)*log(x/mu)); }
 
     /*  void initialize_mu(const VectorXr & y) {
       this->mu_ = y;} // It is different for binary or non-binary outcomes
@@ -250,15 +330,15 @@ template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UI
 
     protected:
 
-      inline Real link(const Real& mu){ return mu ; }
+      inline Real link(const Real& mu)const{ return mu ; }
 
-      inline Real link_deriv(const Real& mu){ return 1; }
+      inline Real link_deriv(const Real& mu)const{ return 1; }
 
-      inline Real inv_link(const Real& theta){ return theta; }
+      inline Real inv_link(const Real& theta)const{ return theta; }
 
-      inline Real var_function(const Real& mu){ return 1 ;}
+      inline Real var_function(const Real& mu)const{ return 1 ;}
 
-      inline Real dev_function(const Real&mu, const Real& x){ return (x-mu)*(x-mu);}
+      inline Real dev_function(const Real&mu, const Real& x)const{ return (x-mu)*(x-mu);}
 
     /*  void initialize_mu(const VectorXr & y) {
       this->mu_ = y;} // It is different for binary or non-binary outcomes
@@ -271,8 +351,31 @@ template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UI
 };
 
 
-// Exponential
-// TO BE DONE
+// InvGaussian
+template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
+    class FPIRLS_InvGaussian : public FPIRLS_Scaled <InputHandler, Integrator, ORDER, mydim, ndim> {
+
+    protected:
+
+      inline Real link(const Real& mu)const{ return -1/(2*mu*mu) ; }
+
+      inline Real link_deriv(const Real& mu)const{ return 1/(mu*mu*mu)   ; }
+
+      inline Real inv_link(const Real& theta)const{ return sqrt(-1/(2*theta)); }
+
+      inline Real var_function(const Real& mu)const{ return mu*mu*mu;}
+
+      inline Real dev_function(const Real&mu, const Real& x)const{ return (x-mu)*(x-mu)/(mu*mu*x);}
+
+    /*  void initialize_mu(const VectorXr & y) {
+      this->mu_ = y;} // It is different for binary or non-binary outcomes
+    */
+    public:
+
+    FPIRLS_InvGaussian(const MeshHandler<ORDER,mydim,ndim>& mesh, InputHandler& inputData, VectorXr mu0, Real scale_parameter,bool scale_parameter_flag):
+      FPIRLS_Scaled<InputHandler, Integrator, ORDER, mydim, ndim>(mesh, inputData, mu0, scale_parameter, scale_parameter_flag){};
+
+};
 
 // Probit
 // TO BE DONE: how to get normal cdf and its inverse? thay're needed for probit

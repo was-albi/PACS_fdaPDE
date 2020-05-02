@@ -696,9 +696,9 @@ SEXP Smooth_FPCA(SEXP Rlocations, SEXP Rdatamatrix, SEXP Rmesh, SEXP Rorder, SEX
 */
 
 
-  SEXP gam_fem_fit_Laplace(SEXP Rlocations, SEXP Robservations, SEXP Rmesh, SEXP Rorder,SEXP Rmydim, SEXP Rndim,
+  SEXP gam_Laplace(SEXP Rlocations, SEXP Robservations, SEXP Rmesh, SEXP Rorder,SEXP Rmydim, SEXP Rndim,
   					SEXP Rlambda, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues,
-  					SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations , SEXP Rfamily, SEXP RmeshCount, SEXP Rmax_num_iteration, SEXP Rtreshold,SEXP Rtune, SEXP Rmu0, SEXP RscaleParam)
+  					SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations , SEXP Rfamily, SEXP Rmax_num_iteration, SEXP Rtreshold, SEXP Rtune, SEXP Rmu0, SEXP RscaleParam)
 {
     //Set input data: can I re-use this fdapde class? FPCA actually implement it's own class for the datastructure
 	GAMDataLaplace regressionData(Rlocations, Robservations, Rorder, Rlambda, Rmax_num_iteration, Rtreshold, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF, RGCVmethod, Rnrealizations, Rtune);
@@ -725,9 +725,9 @@ SEXP Smooth_FPCA(SEXP Rlocations, SEXP Rdatamatrix, SEXP Rmesh, SEXP Rorder, SEX
 }
 
 
-  SEXP gam_fem_fit_PDE(SEXP Rlocations, SEXP Robservations, SEXP Rmesh, SEXP Rorder,SEXP Rmydim, SEXP Rndim,
+  SEXP gam_PDE(SEXP Rlocations, SEXP Robservations, SEXP Rmesh, SEXP Rorder,SEXP Rmydim, SEXP Rndim,
   					SEXP Rlambda, SEXP RK, SEXP Rbeta, SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues,
-  					SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations , SEXP Rfamily, SEXP RmeshCount, SEXP Rmax_num_iteration, SEXP Rtreshold,SEXP Rtune, SEXP Rmu0, SEXP RscaleParam)
+  					SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations , SEXP Rfamily, SEXP Rmax_num_iteration, SEXP Rtreshold, SEXP Rtune, SEXP Rmu0, SEXP RscaleParam)
 {
     //Set input data: can I re-use this fdapde class? FPCA actually implement it's own class for the datastructure
 	GAMDataElliptic regressionData(Rlocations, Robservations, Rorder, Rlambda, RK, Rbeta, Rc, Rmax_num_iteration, Rtreshold, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF, RGCVmethod, Rnrealizations, Rtune);
@@ -757,9 +757,9 @@ SEXP Smooth_FPCA(SEXP Rlocations, SEXP Rdatamatrix, SEXP Rmesh, SEXP Rorder, SEX
 
 
 
-  SEXP gam_fem_fit_PDE_space_varying(SEXP Rlocations, SEXP Robservations, SEXP Rmesh, SEXP Rorder,SEXP Rmydim, SEXP Rndim,
+  SEXP gam_PDE_space_varying(SEXP Rlocations, SEXP Robservations, SEXP Rmesh, SEXP Rorder,SEXP Rmydim, SEXP Rndim,
   					SEXP Rlambda,SEXP RK, SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues,
-  					SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations , SEXP Rfamily, SEXP RmeshCount, SEXP Rmax_num_iteration, SEXP Rtreshold,SEXP Rtune, SEXP Rmu0, SEXP RscaleParam)
+  					SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations , SEXP Rfamily, SEXP Rmax_num_iteration, SEXP Rtreshold, SEXP Rtune, SEXP Rmu0, SEXP RscaleParam)
 {
     //Set input data: can I re-use this fdapde class? FPCA actually implement it's own class for the datastructure
 	GAMDataEllipticSpaceVarying regressionData(Rlocations, Robservations, Rorder, Rlambda, RK, Rbeta, Rc, Ru, Rmax_num_iteration, Rtreshold, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF, RGCVmethod, Rnrealizations, Rtune);

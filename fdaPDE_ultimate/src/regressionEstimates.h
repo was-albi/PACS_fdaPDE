@@ -54,6 +54,11 @@ public:
 	//! A method computing the result of the regression (beta_hat, fn_hat) given the solution of the FEM problem
 	void computeEstimates();
 
+	//! A method computing the result of the regression (beta_hat, fn_hat) given the solution of the FEM problem FOR THE AREAL DATA
+	//void computeArealEstimates();
+
+
+
 	// get methods
 	inline std::vector<VectorXr> const& getFunctionEst()const{return fn_hat_;};
 	inline std::vector<VectorXr> const& getBetaEst()const{return beta_hat_;};

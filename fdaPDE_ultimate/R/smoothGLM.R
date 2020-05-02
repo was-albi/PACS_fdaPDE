@@ -1,12 +1,116 @@
-#' Spatial generalize linear model with differential regularization
-gam.fem.fit= function(locations = NULL, observations, FEMbasis,
-	lambda, covariates = NULL, BC = NULL, PDE_parameters=NULL, incidence_matrix = NULL, max.steps=15, mu0=NULL,
-	fam=c("binomial", "probit","cloglog", "exponential", "gamma", "poisson", "gaussian"),
-	mesh.const=F, method.phi=1,
-  scale.param=NULL, GCV = FALSE, nrealizations=100, GCVmethod="Stochastic",
-	tune=1.8, weight=F, threshold=0.0004)
-{
+#' Spatial generalize GAM model with differential regularization
+#' 
+#' @param observations A vector of length #observations with the observed data values over the domain. 
+#' If the \code{locations} argument is left NULL the vector of the observations have to be of length #nodes of the 
+#' mesh in the FEMbasis. In this case, each observation is associated to the corresponding node in the mesh. 
+#' If the observations are observed only on a subset of the mesh nodes, fill with \code{NA} the values of the vector 
+#' \code{observations} in correspondence of unobserved data. 
+#' @param locations A #observations-by-2 matrix in the 2D case and #observations-by-3 matrix in the 2.5D and 3D case, where 
+#' each row specifies the spatial coordinates \code{x} and \code{y} (and \code{z} in 2.5D and 3D) of the corresponding 
+#' observation in the vector \code{observations}.
+#' If the locations of the observations coincide with (or are a subset of) the nodes of the mesh in the \code{FEMbasis}, 
+#' leave the parameter \code{locations = NULL} for a faster implementation. 
+#' @param FEMbasis A \code{FEMbasis} object describing the Finite Element basis, as created by \code{\link{create.FEM.basis}}.
+#' @param lambda A scalar or vector of smoothing parameters.
+#' @param covariates A #observations-by-#covariates matrix where each row represents the covariates associated with 
+#' the corresponding observed data value in \code{observations} and each column is a different covariate.
+#' @param PDE_parameters A list specifying the parameters of the PDE in the regularizing term. Default is NULL, i.e. 
+#' regularization is by means of the Laplacian (stationary, isotropic case). 
+#' If the coefficients of the PDE are constant over the domain \code{PDE_parameters} must contain: 
+#' \itemize{
+#'    \item{\code{K}, a 2-by-2 matrix of diffusion coefficients. This induces an anisotropic 
+#' smoothing with a preferential direction that corresponds to the first eigenvector of the diffusion matrix K;}
+#'    \item{\code{b}, a vector of length 2 of advection coefficients. This induces a 
+#' smoothing only in the direction specified by the vector \code{b};} 
+#'    \item{\code{c}, a scalar reaction coefficient. \code{c} induces a shrinkage of the surface to zero.}
+#' }
+#' If the coefficients of the PDE are space-varying \code{PDE_parameters} must contain: 
+#' \itemize{
+#' \item{\code{K}, a function that for each spatial location in the spatial domain (indicated by the vector of the 2 
+#' spatial coordinates) returns a 2-by-2 matrix of diffusion coefficients. The function must support recycling for 
+#' efficiency reasons, thus if the input parameter is a #point-by-2 matrix, the output should be
+#' an array with dimensions 2-by-2-by-#points.}
+#' \item{\code{b}, a function that for each spatial location in the spatial domain returns 
+#' a vector of length 2 of transport coefficients. The function must support recycling for efficiency reasons, thus 
+#' if the input parameter is a #point-by-2 matrix, the output should be
+#' a matrix with dimensions 2-by-#points;} 
+#' \item{\code{c}, a function that for each spatial location in the spatial domain  returns a scalar reaction coefficient.
+#' The function must support recycling for efficiency reasons, thus if the input parameter is a #point-by-2 matrix, the output should be
+#' a vector with length #points;} 
+#' \item{\code{u}, a function that for each spatial location in the spatial domain  returns a scalar reaction coefficient.
+#' \code{u} induces a reaction effect. The function must support recycling for efficiency reasons, thus if the input 
+#' parameter is a #point-by-2 matrix, the output should be
+#' a vector with length #points.}
+#' }
+#' For 2.5D and 3D, only the Laplacian is available (\code{PDE_parameters=NULL}). 
+#' @param incidence_matrix A #regions-by-#triangles/tetrahedrons matrix where the element (i,j) equals 1 if the j-th 
+#' triangle/tetrahedron is in the i-th region and 0 otherwise.
+#' This is needed only for areal data. In case of pointwise data, this parameter is set to \code{NULL}.
+#' @param BC A list with two vectors: 
+#'  \code{BC_indices}, a vector with the indices in \code{nodes} of boundary nodes where a Dirichlet Boundary Condition should be applied;
+#'  \code{BC_values}, a vector with the values that the spatial field must take at the nodes indicated in \code{BC_indices}.
+#' @param GCV Boolean. If \code{TRUE} the following quantities are computed: the trace of the smoothing matrix, the estimated error standard deviation,  and 
+#'        the Generalized Cross Validation criterion, for each value of the smoothing parameter specified in \code{lambda}.
+#' @param GCVmethod This parameter is considered only when \code{GCV=TRUE}. It can be either "Exact" or "Stochastic". 
+#' If set to "Exact" the algoritm performs an exact (but possibly slow) computation 
+#' of the GCV index. If set to "Stochastic" the GCV is approximated by a stochastic algorithm.
+#' @param nrealizations This parameter is considered only when \code{GCV=TRUE} and \code{GCVmethod = "Stochastic"}. 
+#' It is a positive integer that represents the number of uniform random variables used in stochastic GCV computation.      
+#' @param mu0 This parameter is a vector that set the starting point for FPIRLS algorithm. It represent an initial guess of the location parameter.
+#' Default is set to observation for non binary distribution while equal to \code{0.5(observations + 0.5)} for binary data.
+#' @param fam This parameter specify the distibution within exponential family used for GLM model.
+#' The following distribution are implemented: "binomial", "exponential", "gamma", "poisson", "gaussian", "invgaussian".
+#' The default link function for binomial is \code{logit} if you want either \code{probit} or \code{clogloc} set \code{fam = "probit"}, \code{fam = "cloglog"}.      
+#' @param scale.param Dispersion parameter of the chosen distribution. This is only required for "gamma", "gaussian", "invgaussian".
+#' User may specify the parameter as a positive real number. If the parameter is not supplied, it is estimated from data according to Wilhelm Sangalli 2016. 
+#' @param tune Tuning parameter used for the estimation of GCV. Default value \code{tune = 1.8}.
+#' It is advised to set it grather than 1 to avoid overfitting.
+#' @param threshold This parameter is used for arresting algorithm iterations. Algorithm stops when two successive iterations lead to improvement in penalized log-likelihood smaller than threshold.
+#' Default value \code{threshold = 0.0002020}.
+#' @param max.steps This parameter is used to limit the maximum number of iteration.
+#' Default value \code{max.steps=15}.
+#' @return A list with the following variables:
+#' \itemize{
+#'    \item{\code{fit.FEM}}{A \code{FEM} object that represents the fitted spatial field.}
+#'    \item{\code{PDEmisfit.FEM}}{A \code{FEM} object that represents the Laplacian of the estimated spatial field.}
+#'    \item{\code{beta_hat}}{ If covariates is not \code{NULL}, a matrix with number of rows equal to the number of covariates and numer of columns equal to length of lambda.  The \code{j}th column represents the vector of regression coefficients when 
+#' the smoothing parameter is equal to \code{lambda[j]}.}
+#'    \item{\code{fn_hat}}{ A matrix with number of rows equal to number of locations and number of columns equal to length of lambda. Each column contain the evaluaton of the spatial field in the location points.}
+#'    \item{\code{J_minima}}{A vector of the same length of lambda, containing the reached minima for each value of the smoothing parameter.}
+#'    \item{\code{dof}}{If GCV is \code{TRUE}, a scalar or vector with the trace of the smoothing matrix for each value of the smoothing parameter specified in \code{lambda}.}
+#'    \item{\code{GCV}}{If GCV is \code{TRUE}, a  scalar or vector with the value of the GCV criterion for each value of the smoothing parameter specified in \code{lambda}.}
+#' }
+#' @description This function implements a spatial GAM model with differential regularization. 
+#'  The regularizing term involves a Partial Differential Equation (PDE). In the simplest case the PDE involves only the 
+#'  Laplacian of the spatial field, that induces an isotropic smoothing. When prior information about the anisotropy or 
+#'  non-stationarity is available the PDE involves a general second order linear differential operator with possibly 
+#'  space-varying coefficients. 
+#'  The technique accurately handle data distributed over irregularly shaped domains. Moreover, various conditions 
+#'  can be imposed at the domain boundaries.
+#'  Non linear loglikelihood maximization is performed via Newton method according to FPIRLS algorithm.
+#' @usage smooth.GAM.FEM= function(locations = NULL, observations, FEMbasis,
+#'  lambda, covariates = NULL, BC = NULL, PDE_parameters=NULL, incidence_matrix = NULL, mu0=NULL,
+#'  fam= "invgaussian",scale.param=NULL, GCV = FALSE, nrealizations=100, GCVmethod="Stochastic",
+#'  tune=1.8, threshold=0.0002020, max.steps=15 )
+#' @export        
 
+#' @references 
+#' \itemize{
+#'    \item{Sangalli, L. M., Ramsay, J. O., Ramsay, T. O. (2013). Spatial spline regression models. 
+#' Journal of the Royal Statistical Society: Series B (Statistical Methodology), 75(4), 681-703.}
+#'    \item{Matthieu Wilhelm & Laura M. Sangalli (2016). Generalized spatial regression with differential regularization. 
+#'  Journal of Statistical Computation and Simulation, 86:13, 2497-2518.}
+#' }
+#' @examples
+#' library(fdaPDE)
+
+smooth.GAM.FEM = function(locations = NULL, observations, FEMbasis,
+	lambda, covariates = NULL, BC = NULL, PDE_parameters=NULL, incidence_matrix = NULL, mu0=NULL,
+	fam=c("binomial", "probit","cloglog", "exponential", "gamma", "poisson", "gaussian", "invgaussian"),
+  scale.param=NULL, GCV = FALSE, nrealizations=100, GCVmethod="Stochastic",
+	tune=1.8, threshold=0.0002020, max.steps=15)
+{
+ (2016)
 ### 1) Mesh, GVC and FAMILY method set up
 ### mesh set up
 if(class(FEMbasis$mesh) == "mesh.2D"){
@@ -30,17 +134,18 @@ if(class(FEMbasis$mesh) == "mesh.2D"){
     stop("GCVmethod must be either Stochastic or Exact")
   }
   #### FAMILY set up
-  family_admit = c("binomial", "probit", "cloglog", "exponential", "gamma", "poisson", "gaussian")
+  family_admit = c("binomial", "probit", "cloglog", "exponential", "gamma", "poisson", "gaussian", "invgaussian")
  if(sum(fam==family_admit)==0 ){
-     stop("'family' parameter required.\nCheck if it is one of the following: binomial, probit, cloglog, exponential, gamma, poisson")
+     stop("'family' parameter required.\nCheck if it is one of the following: binomial, probit, cloglog, exponential, gamma, poisson, gaussian")
 }
 
   # General Check of other parameters
   
-  #checkGLMParameters(max.steps, mu0, mesh.const, method.phi, scale.param, tune, weight)
   space_varying=checkSmoothingParameters(locations = locations, observations = observations, FEMbasis= FEMbasis, lambda = lambda, covariates = covariates, incidence_matrix = incidence_matrix, BC = BC, GCV = GCV, PDE_parameters = PDE_parameters, GCVmethod = GCVMETHOD, nrealizations = nrealizations)
   
-  checkGLMParameters(max.steps, mu0, mesh.const, method.phi, scale.param, tune, weight, threshold)
+  checkGAMParameters(max.steps, mu0, scale.param, tune, threshold, fam)
+  if(length(mu0) != length(observations) )
+    stop(" 'mu0' and 'observations' must have equal length")
 
   ################## End checking parameters, sizes and conversion #############################
   ## Converting to format internal usage
@@ -75,23 +180,23 @@ if(class(FEMbasis$mesh) == "mesh.2D"){
 
     bigsol = NULL
     print('C++ Code Execution')
-    bigsol = CPP_smooth.FEM.GLM(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
+    bigsol = CPP_smooth.GAM.FEM(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
             covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
             BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, FAMILY=fam,
-            mu0 = mu0, max.steps=max.steps, mesh.const=mesh.const,
-            method.phi=method.phi, scale.param=scale.param, tune=tune, weight=weight, threshold=threshold)
+            mu0 = mu0, max.steps=max.steps,
+            scale.param=scale.param, tune=tune, threshold=threshold)
 
     numnodes = nrow(FEMbasis$mesh$nodes)
 
     } else if(class(FEMbasis$mesh) == 'mesh.2D' & !is.null(PDE_parameters) & space_varying==FALSE){
         bigsol = NULL
         print('C++ Code Execution')
-        bigsol = CPP_smooth.FEM.GLM.PDE.basis(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
+        bigsol = CPP_smooth.GAM.FEM.PDE.basis(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
             PDE_parameters = PDE_parameters, 
             covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
             BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, FAMILY=fam,
-            mu0 = mu0, max.steps=max.steps, mesh.const=mesh.const,
-            method.phi=method.phi, scale.param=scale.param, tune=tune, weight=weight, threshold=threshold )
+            mu0 = mu0, max.steps=max.steps,
+            scale.param=scale.param, tune=tune,  threshold=threshold )
 
         numnodes = nrow(FEMbasis$mesh$nodes)
    
@@ -99,12 +204,12 @@ if(class(FEMbasis$mesh) == "mesh.2D"){
     
     bigsol = NULL
     print('C++ Code Execution')
-    bigsol = CPP_smooth.FEM.GLM.PDE.sv.basis(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
+    bigsol = CPP_smooth.GAM.FEM.PDE.sv.basis(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
             PDE_parameters = PDE_parameters, 
             covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
             BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, FAMILY=fam,
-            mu0 = mu0, max.steps=max.steps, mesh.const=mesh.const,
-            method.phi=method.phi, scale.param=scale.param, tune=tune, weight=weight, threshold=threshold )
+            mu0 = mu0, max.steps=max.steps,
+            scale.param=scale.param, tune=tune, threshold=threshold )
   
     numnodes = nrow(FEMbasis$mesh$nodes)
   } else if(class(FEMbasis$mesh) == 'mesh.2.5D'){
@@ -113,11 +218,11 @@ if(class(FEMbasis$mesh) == "mesh.2D"){
     print('C++ Code Execution')
     if(!is.null(locations))
       stop("The option locations!=NULL for manifold domains is currently not implemented")
-    bigsol = CPP_smooth.manifold.FEM.GLM.basis(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
+    bigsol = CPP_smooth.manifold.GAM.FEM.basis(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
             covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
             BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, FAMILY=fam,
-            mu0 = mu0, max.steps=max.steps, mesh.const=mesh.const,
-            method.phi=method.phi, scale.param=scale.param, tune=tune, weight=weight, threshold=threshold )
+            mu0 = mu0, max.steps=max.steps, 
+            scale.param=scale.param, tune=tune, threshold=threshold )
     
     numnodes = FEMbasis$mesh$nnodes
     
@@ -125,11 +230,11 @@ if(class(FEMbasis$mesh) == "mesh.2D"){
       
     bigsol = NULL  
     print('C++ Code Execution')
-    bigsol = CPP_smooth.volume.FEM.GLM.basis(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
+    bigsol = CPP_smooth.volume.GAM.FEM.basis(locations=locations, observations=observations, FEMbasis=FEMbasis, lambda=lambda,
             covariates=covariates, incidence_matrix=incidence_matrix, ndim=ndim, mydim=mydim,
             BC=BC, GCV=GCV, GCVMETHOD=GCVMETHOD, nrealizations=nrealizations, FAMILY=fam,
-            mu0 = mu0, max.steps=max.steps, mesh.const=mesh.const,
-            method.phi=method.phi, scale.param=scale.param, tune=tune, weight=weight, threshold=threshold )
+            mu0 = mu0, max.steps=max.steps,
+            scale.param=scale.param, tune=tune, threshold=threshold )
     
     numnodes = FEMbasis$mesh$nnodes
   }

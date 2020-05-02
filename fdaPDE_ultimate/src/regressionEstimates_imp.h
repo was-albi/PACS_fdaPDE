@@ -98,39 +98,34 @@ template<typename InputHandler, UInt ORDER, UInt mydim, UInt ndim>
 
 
 		 if(_CovMatrix.rows()>0){
-			 //MatrixXr Cov = _CovMatrix;
 			 MatrixXr Cov = _CovMatrix;
 			 VectorXr _obs_centered = _observations - fn_hat_[j];
 
 				 MatrixXr WTW = Cov.transpose()*_WeightsMatrix.asDiagonal()*Cov;
-				 //VectorXr rightterm = Cov.transpose()*_WeightsMatrix*_obs_centered;
 				 MatrixXr desmatprod = WTW.colPivHouseholderQr().solve(Cov.transpose()*_WeightsMatrix.asDiagonal());
 
-				 //VectorXr tmp = WTW.colPivHouseholderQr().solve(rightterm);
-				 //VectorXr tmp = desmatprod*_obs_centered;
-
 				 VectorXr tmp = VectorXr::Zero(desmatprod.rows());
-			/*	 Real current_product_value = 0;
-				 for(UInt i = 0; i < desmatprod.rows();i++){
-         		for(UInt j=0; j< desmatprod.cols();j++){
-							current_product_value = desmatprod(i,j)*_obs_centered(j);
-							if(abs(current_product_value) < 0.00000001)
-								current_product_value = 0;
-							tmp(i) += current_product_value;
-						}
-				 }*/
+
 				 tmp = desmatprod*_obs_centered;
 				 beta_hat_.push_back(tmp);
 	 	 }
 
-/*
-		 std::string saving_filename = "regressionestimates_betahat_";
-		 saving_filename = saving_filename + ".txt";
-		 printer::saveVectorXr(saving_filename,beta_hat_[0]);
-*/
 
 	 } //end of for-j
 }// end method
+
+
+
+//! A method computing the result of the regression (beta_hat, fn_hat) given the solution of the FEM problem FOR THE AREAL DATA
+/*template<typename InputHandler, UInt ORDER, UInt mydim, UInt ndim>
+	void RegressionEstimates<InputHandler, ORDER, mydim, ndim>::computeArealEstimates(){
+
+}// end method
+*/
+
+
+
+
 
 
 #ifdef R_VERSION_

@@ -375,14 +375,20 @@ void FPIRLS_Scaled<InputHandler, Integrator, ORDER, mydim, ndim>::apply(){
 
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
 void FPIRLS_Scaled<InputHandler, Integrator, ORDER, mydim, ndim>::compute_scale_param(){
+  Real phi;
 
-  _scale_parameter_estimates.resize(this->_dof.size());
+  _scale_parameter_estimates.resize(this->_dof.size(),0);
   const UInt n_obs = this->inputData_.getObservations().size();
 
+  //scale parameter computed as: mean((var.link(mu)*phi)/mu), and phi is computed as in Wood IGAM
   for(UInt i=0; i < this->_dof.size();i++){
-    _scale_parameter_estimates[i] = this->current_J_values[i][0]/(n_obs - this->_dof[i]);
+    phi = this->current_J_values[i][0]/(n_obs - this->_dof[i]);
+    for(UInt j=0; j < this->mu_[i].size(); j++){
+      _scale_parameter_estimates[i] += phi* this->var_function(this->mu_[i][j])/this->mu_[i][j];
+    }
+    _scale_parameter_estimates[i] /= this->mu_[i].size();
   }
-
+  
 }
 
 template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
@@ -471,6 +477,18 @@ saving_filename = saving_filename + ".txt";
 printer::SaveDimension(saving_filename,_dof);
 
 }
+
+template <typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
+Real FPIRLS_Probit<InputHandler,Integrator,ORDER, mydim, ndim>::erf_inv(const Real& x)const{
+   Real tt1, tt2, lnx, sgn;
+   sgn = (x < 0) ? -1.0 : 1.0;
+   lnx = log((1 - x)*(1 + x));  // ln(x) = ln(1 - x*x);
+   tt1 = 2/(M_PI*0.147) + 0.5 * lnx;
+   tt2 = 1/(0.147) * lnx;
+
+   return(sgn*sqrt(-tt1 + sqrt(tt1*tt1 - tt2)));
+}
+
 
 /*
 template<typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>

@@ -17,9 +17,9 @@ extern SEXP regression_Laplace(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, S
 extern SEXP regression_PDE(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP regression_PDE_space_varying(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP Smooth_FPCA(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP gam_fem_fit_Laplace(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP gam_fem_fit_PDE(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP gam_fem_fit_PDE_space_varying( SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP gam_Laplace(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP gam_PDE(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP gam_PDE_space_varying( SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP get_regression_Estimates(SEXP , SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 
@@ -37,9 +37,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"regression_PDE",                   (DL_FUNC) &regression_PDE,                   17},
     {"regression_PDE_space_varying",     (DL_FUNC) &regression_PDE_space_varying,     18},
     {"Smooth_FPCA",                      (DL_FUNC) &Smooth_FPCA,                      13},
-    {"gam_fem_fit_Laplace",              (DL_FUNC) &gam_fem_fit_Laplace,              21},
-    {"gam_fem_fit_PDE",                  (DL_FUNC) &gam_fem_fit_PDE,                  24},
-    {"gam_fem_fit_PDE_space_varying",    (DL_FUNC) &gam_fem_fit_PDE_space_varying,    25},
+    {"gam_Laplace",                      (DL_FUNC) &gam_Laplace,                      20},
+    {"gam_PDE",                          (DL_FUNC) &gam_PDE,                          23},
+    {"gam_PDE_space_varying",            (DL_FUNC) &gam_PDE_space_varying,            24},
     {"get_regression_Estimates",         (DL_FUNC) &get_regression_Estimates,         10},
     {NULL, NULL, 0}
 };

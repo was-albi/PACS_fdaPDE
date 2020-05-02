@@ -1,7 +1,7 @@
-CPP_smooth.FEM.GLM<-function(locations, observations, FEMbasis, lambda,
+CPP_smooth.GAM.FEM<-function(locations, observations, FEMbasis, lambda,
                                   covariates=NULL, incidence_matrix=NULL, ndim, mydim,
                                   BC=NULL, GCV, GCVMETHOD = 2, nrealizations=100, mu0=NULL, max.steps=15, FAMILY, 
-                                  mesh.const=F, method.phi=1, scale.param=NULL, tune=1.8, weight=F, threshold=0.0004)
+                                  scale.param=NULL, tune=1.8, threshold=0.0004)
 {
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
   FEMbasis$mesh$triangles = FEMbasis$mesh$triangles - 1
@@ -71,8 +71,7 @@ CPP_smooth.FEM.GLM<-function(locations, observations, FEMbasis, lambda,
   # Type conversion: form integer to bool(logical)
   GCV <- as.integer(GCV)
   storage.mode(GCV) <-"integer"
-  mesh.const <- as.integer(mesh.const)
-  storage.mode(mesh.const) <-"integer"
+
 
   storage.mode(nrealizations) <- "integer"
   storage.mode(GCVMETHOD) <- "integer"
@@ -84,19 +83,19 @@ CPP_smooth.FEM.GLM<-function(locations, observations, FEMbasis, lambda,
   storage.mode(scale.param) <- "double"
   storage.mode(threshold) <- "double"
   ## Call C++ function
-  bigsol <- .Call("gam_fem_fit_Laplace", locations, observations, FEMbasis$mesh, FEMbasis$order,
+  bigsol <- .Call("gam_Laplace", locations, observations, FEMbasis$mesh, FEMbasis$order,
                  mydim, ndim, lambda, covariates, incidence_matrix, BC$BC_indices, BC$BC_values,
-                 GCV, GCVMETHOD, nrealizations, FAMILY, mesh.const, max.steps, threshold, tune, mu0, scale.param, PACKAGE = "fdaPDE")
+                 GCV, GCVMETHOD, nrealizations, FAMILY, max.steps, threshold, tune, mu0, scale.param, PACKAGE = "fdaPDE")
   # GCV became DOF variable in C++, the motivation is if GCV = TRUE we need to compute DoF otherwise no. 
   
   return(bigsol)
 }
 
 
-CPP_smooth.FEM.GLM.PDE.basis<-function(locations, observations, FEMbasis, lambda, PDE_parameters,
+CPP_smooth.GAM.FEM.PDE.basis<-function(locations, observations, FEMbasis, lambda, PDE_parameters,
                                   covariates=NULL, incidence_matrix=NULL, ndim, mydim,
                                   BC=NULL, GCV, GCVMETHOD = 2, nrealizations=100, mu0=NULL, max.steps=15, FAMILY, 
-                                  mesh.const=F, method.phi=1, scale.param=NULL, tune=1.8, weight=F, threshold=0.0004)
+                                  scale.param=NULL, tune=1.8, threshold=0.0004)
 {
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
   FEMbasis$mesh$triangles = FEMbasis$mesh$triangles - 1
@@ -166,8 +165,6 @@ CPP_smooth.FEM.GLM.PDE.basis<-function(locations, observations, FEMbasis, lambda
   # Type conversion: form integer to bool(logical)
   GCV <- as.integer(GCV)
   storage.mode(GCV) <-"integer"
-  mesh.const <- as.integer(mesh.const)
-  storage.mode(mesh.const) <-"integer"
 
   storage.mode(nrealizations) <- "integer"
   storage.mode(GCVMETHOD) <- "integer"
@@ -184,18 +181,18 @@ CPP_smooth.FEM.GLM.PDE.basis<-function(locations, observations, FEMbasis, lambda
   storage.mode(PDE_parameters$b) <- "double"
   storage.mode(PDE_parameters$c) <- "double"
   ## Call C++ function
-  bigsol <- .Call("gam_fem_fit_PDE", locations, observations, FEMbasis$mesh, FEMbasis$order,
+  bigsol <- .Call("gam_PDE", locations, observations, FEMbasis$mesh, FEMbasis$order,
                  mydim, ndim, lambda, PDE_parameters$K, PDE_parameters$b, PDE_parameters$c, covariates, incidence_matrix, BC$BC_indices, BC$BC_values,
-                 GCV, GCVMETHOD, nrealizations, FAMILY, mesh.const, max.steps, threshold, tune, mu0, scale.param, PACKAGE = "fdaPDE")
+                 GCV, GCVMETHOD, nrealizations, FAMILY, max.steps, threshold, tune, mu0, scale.param, PACKAGE = "fdaPDE")
   # GCV became DOF variable in C++, the motivation is if GCV = TRUE we need to compute DoF otherwise no. 
   
   return(bigsol)
 }
 
-CPP_smooth.FEM.GLM.PDE.sv.basis<-function(locations, observations, FEMbasis, lambda, PDE_parameters,
+CPP_smooth.GAM.FEM.PDE.sv.basis<-function(locations, observations, FEMbasis, lambda, PDE_parameters,
                                   covariates=NULL, incidence_matrix=NULL, ndim, mydim,
                                   BC=NULL, GCV, GCVMETHOD = 2, nrealizations=100, mu0=NULL, max.steps=15, FAMILY, 
-                                  mesh.const=F, method.phi=1, scale.param=NULL, tune=1.8, weight=F, threshold=0.0004)
+                                  scale.param=NULL, tune=1.8, threshold=0.0004)
 {
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
   FEMbasis$mesh$triangles = FEMbasis$mesh$triangles - 1
@@ -271,8 +268,6 @@ CPP_smooth.FEM.GLM.PDE.sv.basis<-function(locations, observations, FEMbasis, lam
   # Type conversion: form integer to bool(logical)
   GCV <- as.integer(GCV)
   storage.mode(GCV) <-"integer"
-  mesh.const <- as.integer(mesh.const)
-  storage.mode(mesh.const) <-"integer"
 
   storage.mode(nrealizations) <- "integer"
   storage.mode(GCVMETHOD) <- "integer"
@@ -289,18 +284,18 @@ CPP_smooth.FEM.GLM.PDE.sv.basis<-function(locations, observations, FEMbasis, lam
   storage.mode(PDE_param_eval$c) <- "double"
   storage.mode(PDE_param_eval$u) <- "double"
   ## Call C++ function
-  bigsol <- .Call("gam_fem_fit_PDE_space_varying", locations, observations, FEMbasis$mesh, FEMbasis$order,
+  bigsol <- .Call("gam_PDE_space_varying", locations, observations, FEMbasis$mesh, FEMbasis$order,
                  mydim, ndim, lambda, PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u, covariates, incidence_matrix, BC$BC_indices, BC$BC_values,
-                 GCV, GCVMETHOD, nrealizations, FAMILY, mesh.const, max.steps, threshold, tune, mu0, scale.param, PACKAGE = "fdaPDE")
+                 GCV, GCVMETHOD, nrealizations, FAMILY, max.steps, threshold, tune, mu0, scale.param, PACKAGE = "fdaPDE")
   # GCV became DOF variable in C++, the motivation is if GCV = TRUE we need to compute DoF otherwise no. 
   
   return(bigsol)
 }
 
-CPP_smooth.manifold.FEM.GLM.basis<-function(locations, observations, FEMbasis, lambda,
+CPP_smooth.manifold.GAM.FEM.basis<-function(locations, observations, FEMbasis, lambda,
                                   covariates=NULL, incidence_matrix=NULL, ndim, mydim,
                                   BC=NULL, GCV, GCVMETHOD = 2, nrealizations=100, mu0=NULL, max.steps=15, FAMILY, 
-                                  mesh.const=F, method.phi=1, scale.param=NULL, tune=1.8, weight=F, threshold=0.0004)
+                                  scale.param=NULL, tune=1.8, threshold=0.0004)
 {
   
   # C++ function for manifold works with vectors not with matrices
@@ -376,9 +371,7 @@ CPP_smooth.manifold.FEM.GLM.basis<-function(locations, observations, FEMbasis, l
   # Type conversion: form integer to bool(logical)
   GCV <- as.integer(GCV)
   storage.mode(GCV) <-"integer"
-  mesh.const <- as.integer(mesh.const)
-  storage.mode(mesh.const) <-"integer"
-
+  
   storage.mode(nrealizations) <- "integer"
   storage.mode(GCVMETHOD) <- "integer"
   storage.mode(FAMILY) <- "character"
@@ -389,18 +382,18 @@ CPP_smooth.manifold.FEM.GLM.basis<-function(locations, observations, FEMbasis, l
   storage.mode(scale.param) <- "double"
   storage.mode(threshold) <- "double"
   ## Call C++ function
-  bigsol <- .Call("gam_fem_fit_Laplace", locations, observations, FEMbasis$mesh, FEMbasis$mesh$order,
+  bigsol <- .Call("gam_Laplace", locations, observations, FEMbasis$mesh, FEMbasis$mesh$order,
                  mydim, ndim, lambda, covariates, incidence_matrix, BC$BC_indices, BC$BC_values,
-                 GCV, GCVMETHOD, nrealizations, FAMILY, mesh.const, max.steps, threshold, tune, mu0, scale.param, PACKAGE = "fdaPDE")
+                 GCV, GCVMETHOD, nrealizations, FAMILY, max.steps, threshold, tune, mu0, scale.param, PACKAGE = "fdaPDE")
   # GCV became DOF variable in C++, the motivation is if GCV = TRUE we need to compute DoF otherwise no. 
   
   return(bigsol)
 }
 
-CPP_smooth.volume.FEM.GLM.basis<-function(locations, observations, FEMbasis, lambda,
+CPP_smooth.volume.GAM.FEM.basis<-function(locations, observations, FEMbasis, lambda,
                                   covariates=NULL, incidence_matrix=NULL, ndim, mydim,
                                   BC=NULL, GCV, GCVMETHOD = 2, nrealizations=100, mu0=NULL, max.steps=15, FAMILY, 
-                                  mesh.const=F, method.phi=1, scale.param=NULL, tune=1.8, weight=F, threshold=0.0004)
+                                  scale.param=NULL, tune=1.8, threshold=0.0004)
 {
   
   # C++ function for volumetric works with vectors not with matrices
@@ -476,8 +469,6 @@ CPP_smooth.volume.FEM.GLM.basis<-function(locations, observations, FEMbasis, lam
   # Type conversion: form integer to bool(logical)
   GCV <- as.integer(GCV)
   storage.mode(GCV) <-"integer"
-  mesh.const <- as.integer(mesh.const)
-  storage.mode(mesh.const) <-"integer"
 
   storage.mode(nrealizations) <- "integer"
   storage.mode(GCVMETHOD) <- "integer"
@@ -489,9 +480,9 @@ CPP_smooth.volume.FEM.GLM.basis<-function(locations, observations, FEMbasis, lam
   storage.mode(scale.param) <- "double"
   storage.mode(threshold) <- "double"
   ## Call C++ function
-  bigsol <- .Call("gam_fem_fit_Laplace", locations, observations, FEMbasis$mesh, FEMbasis$mesh$order,
+  bigsol <- .Call("gam_Laplace", locations, observations, FEMbasis$mesh, FEMbasis$mesh$order,
                  mydim, ndim, lambda, covariates, incidence_matrix, BC$BC_indices, BC$BC_values,
-                 GCV, GCVMETHOD, nrealizations, FAMILY, mesh.const, max.steps, threshold, tune, mu0, scale.param, PACKAGE = "fdaPDE")
+                 GCV, GCVMETHOD, nrealizations, FAMILY, max.steps, threshold, tune, mu0, scale.param, PACKAGE = "fdaPDE")
   # GCV became DOF variable in C++, the motivation is if GCV = TRUE we need to compute DoF otherwise no. 
   
   return(bigsol)
