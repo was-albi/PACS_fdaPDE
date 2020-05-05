@@ -77,7 +77,7 @@
 #' the smoothing parameter is equal to \code{lambda[j]}.}
 #'    \item{\code{fn_hat}}{ A matrix with number of rows equal to number of locations and number of columns equal to length of lambda. Each column contain the evaluaton of the spatial field in the location points.}
 #'    \item{\code{J_minima}}{A vector of the same length of lambda, containing the reached minima for each value of the smoothing parameter.}
-#'    \item{\code{dof}}{If GCV is \code{TRUE}, a scalar or vector with the trace of the smoothing matrix for each value of the smoothing parameter specified in \code{lambda}.}
+#'    \item{\code{DoF}}{If GCV is \code{TRUE}, a scalar or vector with the trace of the smoothing matrix for each value of the smoothing parameter specified in \code{lambda}.}
 #'    \item{\code{GCV}}{If GCV is \code{TRUE}, a  scalar or vector with the value of the GCV criterion for each value of the smoothing parameter specified in \code{lambda}.}
 #' }
 #' @description This function implements a spatial GAM model with differential regularization. 
@@ -143,9 +143,8 @@ if(class(FEMbasis$mesh) == "mesh.2D"){
   
   space_varying=checkSmoothingParameters(locations = locations, observations = observations, FEMbasis= FEMbasis, lambda = lambda, covariates = covariates, incidence_matrix = incidence_matrix, BC = BC, GCV = GCV, PDE_parameters = PDE_parameters, GCVmethod = GCVMETHOD, nrealizations = nrealizations)
   
-  checkGAMParameters(max.steps, mu0, scale.param, tune, threshold, fam)
-  if(length(mu0) != length(observations) )
-    stop(" 'mu0' and 'observations' must have equal length")
+  checkGAMParameters(max.steps = max.steps, mu0 = mu0, observations.len = length(observations), scale.param = scale.param, tune = tune, threshold = threshold, fam = fam)
+  
 
   ################## End checking parameters, sizes and conversion #############################
   ## Converting to format internal usage
@@ -239,30 +238,40 @@ if(class(FEMbasis$mesh) == "mesh.2D"){
     numnodes = FEMbasis$mesh$nnodes
   }
     
+
+  reslist = NULL  
   # Estimated functions (smooth fields)
   f = bigsol[[1]][1:numnodes,]
   g = bigsol[[1]][(numnodes+1):(2*numnodes),]# laplacian(f)
-
-  print("DOFs: \n")
-  print(bigsol[[2]])
-  
+  # DoF estimate
+  DoF = bigsol[[2]]
   # Make Functional objects object
   fit.FEM  = FEM(f, FEMbasis)
   PDEmisfit.FEM = FEM(g, FEMbasis)
-
-  reslist = NULL
+  
   beta_hat = bigsol[[4]]
   fn_hat = bigsol[[5]]
-
   J_minima = bigsol[[3]]
-
   computedGCV = bigsol[[7]]
-  if(GCV == TRUE)
-  {
-    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta_hat = beta_hat, fn_hat = fn_hat, J_minima = J_minima, GCV = computedGCV)
+  
+  # check if covariates is used
+  if(!is.null(covariates)){
+    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta_hat = beta_hat)
   }else{
-    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta_hat = beta_hat, fn_hat = fn_hat, J_minima = J_minima)
+    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM)
   }
+
+  # check if location is used
+  if( !is.null(locations) ){
+    reslist=c(reslist,list(fn_hat = fn_hat))
+  }
+  # check if GCV method is used  
+  if(GCV == TRUE){
+    reslist=c(reslist,list( J_minima = J_minima, DoF= DoF ,GCV = computedGCV))
+    }else{
+      reslist=c(reslist,list( J_minima = J_minima))
+   }
+
   return(reslist)
 
   }

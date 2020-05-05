@@ -13,9 +13,8 @@ class printer{
 // std::string directory = "/Users/giuliopn/PACSworkspace4/PACS_fdaPDE/GAM_tests/debugging_output/CPP/";
 
 // std::string directory = "/home/alb/Scrivania/PACS/Git_Folder/debugging_output/CPP/";
-
 public:
-
+	static int counter;
 static void SaveMatrixXr(std::string& name_txt, const MatrixXr & mat){
 		const UInt numRows = mat.rows();
 		const UInt numCols = mat.cols();
@@ -71,6 +70,25 @@ static void saveVectorXr(std::string& name_txt, const VectorXr & vect){
 	File.close();
 }
 
+static void milestone(std::string name_txt){
+	counter++;
+	std::string directory =  "/Users/giuliopn/PACSworkspace4/debugging_output/CPP/";
+	name_txt = directory + name_txt;
+	std::ofstream File(name_txt);
+	File<<counter;
+	File.close();
+}
+
+static void variableInt(std::string name_txt, int x){
+	std::string directory =  "/Users/giuliopn/PACSworkspace4/debugging_output/CPP/";
+	name_txt = directory + name_txt;
+	std::ofstream File(name_txt);
+	File<<x;
+	File.close();
+}
+
 };
+
+int printer::counter = 0;
 
 #endif

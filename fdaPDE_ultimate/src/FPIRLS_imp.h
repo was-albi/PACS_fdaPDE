@@ -41,7 +41,7 @@ void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::apply( const Forci
 
   G_.resize(mu_.size());
   WeightsMatrix_.resize(mu_.size());
-  _beta_hat.resize(mu_.size());
+  if( this->inputData_.getCovariates().rows() > 0 ) _beta_hat.resize(mu_.size());
   _fn_hat.resize(mu_.size());
   _dof.resize(mu_.size());
   _solution.resize(mu_.size());
@@ -175,7 +175,11 @@ void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::update_solution(UI
   //Set up regression
   MixedFERegression<InputHandler, Integrator, ORDER, mydim, ndim> regression(mesh_, inputData_);
 
+  printer::milestone("after_MixedFEregression.txt");
+
   regression.apply();
+
+  printer::milestone("after_MixedFEregression_apply.txt");
 
   _solution[lambda_index] = regression.getSolution()[0];
   _dof[lambda_index] = regression.getDOF()[0];
@@ -271,16 +275,18 @@ void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::compute_mu(UInt& l
 
   RegressionEstimates<InputHandler, ORDER, mydim, ndim> regressionEst(inputData_, mesh_, _solution[lambda_index]);
 
+  std::string saving_filename;
   regressionEst.computeEstimates();
+  if( this->inputData_.getCovariates().rows() > 0 ){
+    _beta_hat[lambda_index] =regressionEst.getBetaEst()[0];
+    saving_filename = "compute_mu_betahat_";
+    saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+    printer::saveVectorXr(saving_filename,_beta_hat[lambda_index]);
+  }
 
-  _beta_hat[lambda_index] = regressionEst.getBetaEst()[0];
   _fn_hat[lambda_index] = regressionEst.getFunctionEst()[0];
 
-  std::string saving_filename;
 
-  saving_filename = "compute_mu_betahat_";
-  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
-  printer::saveVectorXr(saving_filename,_beta_hat[lambda_index]);
 
   saving_filename = "compute_mu_fnhat_";
   saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";

@@ -251,6 +251,11 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::system_f
 	// First phase: Factorization of matrixNoCov
 	matrixNoCovdec_.compute(matrixNoCov_);
 
+	std::string saving_filename = "matrixNoCov_";
+  	saving_filename = saving_filename + ".txt";
+  	printer::SaveMatrixXr(saving_filename,matrixNoCov_);
+
+
 	if (regressionData_.getCovariates().rows() != 0) {
 		// Second phase: factorization of matrix  G =  C + [V * matrixNoCov^-1 * U]= C + D
 
@@ -302,11 +307,18 @@ template<typename Derived>
 MatrixXr MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::system_solve(const Eigen::MatrixBase<Derived> &b) {
 
 	// Resolution of the system matrixNoCov * x1 = b
+	
+	printer::variableInt("getCovariates_rows.txt", regressionData_.getCovariates().rows());
 	MatrixXr x1 = matrixNoCovdec_.solve(b);
+	
 
+	 std::string saving_filename = "x1";
+  	saving_filename = saving_filename + ".txt";
+  	printer::saveVectorXr(saving_filename, x1);
+	
 	if (regressionData_.getCovariates().rows() != 0) {
 		// Resolution of G * x2 = V * x1
-
+		printer::milestone("system_solve_getCov_size_not0.txt");
 		MatrixXr x2 = Gdec_.solve(V_*x1);
 
 		// Resolution of the system matrixNoCov * x3 = U * x2
@@ -399,19 +411,20 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::getRightHa
 	{
 		if (regressionData_.isLocationsByNodes())
 		{
+			VectorXr tmp = LeftMultiplybyQ(regressionData_.getObservations());
 			for (auto i=0; i<nlocations;++i)
 			{
 				auto index_i = regressionData_.getObservationsIndices()[i];
-				rightHandData(index_i) = regressionData_.getObservations()[i];
+				rightHandData(index_i) = tmp(i);
 			}
 		}
 		else if (regressionData_.getNumberOfRegions() == 0) //pointwise data
 		{
-			rightHandData=psi_.transpose()*regressionData_.getObservations();
+			rightHandData=psi_.transpose()*LeftMultiplybyQ(regressionData_.getObservations())*regressionData_.getObservations();
 		}
 		else //areal data
 		{
-			rightHandData=psi_.transpose()*A_.asDiagonal()*regressionData_.getObservations();
+			rightHandData=psi_.transpose()*A_.asDiagonal()*LeftMultiplybyQ(regressionData_.getObservations())*regressionData_.getObservations();
 		}
 	}
 	else if (regressionData_.getNumberOfRegions() == 0) //with covariates, pointwise data
@@ -796,6 +809,8 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::apply(EO
 	setA();
 	setPsi();
 
+	printer::milestone("apply_1.txt");
+
 	if(!regressionData_.getCovariates().rows() == 0)
 	{
 		setH();
@@ -811,6 +826,7 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::apply(EO
 	this->_rightHandSide = VectorXr::Zero(2*nnodes);
 	this->_rightHandSide.topRows(nnodes)=rightHandData;
 
+	printer::milestone("apply_2.txt");
 	VectorXr forcingTerm;
 
 	if(this->isSpaceVarying)
@@ -819,7 +835,7 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::apply(EO
 		Assembler::forcingTerm(mesh_, fe, u, forcingTerm);
 
 	}
-
+	printer::milestone("apply_3.txt");
 	this->_solution.resize(regressionData_.getLambda().size());
 	this->_dof.resize(regressionData_.getLambda().size());
 
@@ -830,9 +846,10 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::apply(EO
 		SpMat R1_lambda = (-lambda)*R1_;
 		SpMat R0_lambda = (-lambda)*R0_;
 
+	printer::milestone("apply_4.txt");
 	this->buildMatrixNoCov(psi_, R1_lambda, R0_lambda);
 	//this->buildCoeffMatrix(DMat_, R1_lambda, R0_lambda);
-
+	printer::milestone("apply_5.txt");
 
 	if(this->isSpaceVarying)
 	{
@@ -844,17 +861,19 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::apply(EO
 		addDirichletBC();
 
 	system_factorize();
-
+	printer::milestone("apply_6.txt");
 
 	_solution[i] = this->template system_solve(this->_rightHandSide);
-
+	printer::milestone("apply_7.txt");
 	if(regressionData_.computeDOF())
 	{
+		printer::milestone("apply_7_5.txt");
 		computeDegreesOfFreedom(i,lambda);
 	}
 		else
 			_dof[i] = -1;
 	}
+	printer::milestone("apply_8.txt");
 }
 
 

@@ -156,17 +156,20 @@ SEXP GAM_skeleton(InputHandler &GAMData, SEXP Rmesh, SEXP Rmu0, std::string fami
   const std::vector<VectorXr>& solution = fpirls->getSolution();
   const std::vector<Real>& dof = fpirls->getDOF();
   const std::vector<Real>& J_value = fpirls->get_J();
-  const std::vector<VectorXr>& beta_hat_tmp = fpirls->getBetaEst();
+  const std::vector<VectorXr>& beta_hat = fpirls->getBetaEst();
   const std::vector<VectorXr>& fn_hat = fpirls->getFunctionEst();
   const std::vector<Real> scale_parameter_est = fpirls->getScaleParamEst();
-	const std::vector<Real>& gcv = fpirls->getGCV();
+  const std::vector<Real>& gcv = fpirls->getGCV();
 
+  const UInt betas_dimension = GAMData.getCovariates().cols();// if(covariates == NULL) => NO BETA 
+/*
 	std::vector<VectorXr> beta_hat = beta_hat_tmp;
 
 	if(GAMData.getCovariates().rows()==0){
 		VectorXr tmp;
 		beta_hat.push_back(tmp);
 	}
+*/
 
   // COMPOSIZIONE SEXP result FOR RETURN
 
@@ -184,7 +187,7 @@ SEXP GAM_skeleton(InputHandler &GAMData, SEXP Rmesh, SEXP Rmu0, std::string fami
 
 	saving_filename = "DIMENSIONE_beta_hat";
 	saving_filename = saving_filename + ".txt";
-	printer::SaveDimension(saving_filename,beta_hat_tmp);
+	printer::SaveDimension(saving_filename,beta_hat);
 
 	saving_filename = "DIMENSIONE_fn_hat";
 	saving_filename = saving_filename + ".txt";
@@ -201,7 +204,7 @@ SEXP GAM_skeleton(InputHandler &GAMData, SEXP Rmesh, SEXP Rmu0, std::string fami
 	SET_VECTOR_ELT(result, 0, Rf_allocMatrix(REALSXP, solution[0].size(), solution.size()));
 	SET_VECTOR_ELT(result, 1, Rf_allocVector(REALSXP, dof.size()));
   SET_VECTOR_ELT(result, 2, Rf_allocVector(REALSXP, J_value.size()));
-  SET_VECTOR_ELT(result, 3, Rf_allocMatrix(REALSXP, beta_hat[0].size(), beta_hat.size()));
+  SET_VECTOR_ELT(result, 3, Rf_allocMatrix(REALSXP, betas_dimension, beta_hat.size()));
   SET_VECTOR_ELT(result, 4, Rf_allocMatrix(REALSXP, fn_hat[0].size(), fn_hat.size()));
 	SET_VECTOR_ELT(result, 5, Rf_allocVector(REALSXP, scale_parameter_est.size()));
 	SET_VECTOR_ELT(result, 6, Rf_allocVector(REALSXP, gcv.size()));
@@ -244,7 +247,7 @@ SEXP GAM_skeleton(InputHandler &GAMData, SEXP Rmesh, SEXP Rmu0, std::string fami
 	Real *rans4 = REAL(VECTOR_ELT(result, 3));
 	for(UInt j = 0; j < beta_hat.size(); j++)
 	{
-		for(UInt i = 0; i < beta_hat[0].size(); i++)
+		for(UInt i = 0; i < betas_dimension; i++)
 			rans4[i + beta_hat[0].size()*j] = beta_hat[j](i);
 	}
 

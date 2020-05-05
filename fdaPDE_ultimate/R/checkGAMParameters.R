@@ -1,4 +1,4 @@
-checkGAMParameters<-function(max.steps, mu0, method.phi, scale.param, tune, threshold, fam)
+checkGAMParameters<-function(max.steps, mu0, observations.len, scale.param, tune, threshold, fam)
 {
 	  #################### Parameter Check #########################
 	# Check max.steps 
@@ -15,6 +15,9 @@ checkGAMParameters<-function(max.steps, mu0, method.phi, scale.param, tune, thre
     		stop("'mu0' must be a column vector")
   		if(nrow(mu0) < 1)
   			stop("'mu0' must contain at least one element")
+  		
+  		if(length(mu0) != observations.len )
+    		stop(" 'mu0' and 'observations' must have equal length")
 
   		fam_positive = c("exponential", "gamma", "poisson", "cloglog")
   		if(sum(fam==fam_positive)==1){
@@ -22,10 +25,6 @@ checkGAMParameters<-function(max.steps, mu0, method.phi, scale.param, tune, thre
   				stop("mu0 must be composed by real positive number for your distribution")
   		}
   	}
-
-	# check method.phi
-	if(method.phi != 1 && method.phi!=2)
-		stop("'method.phi' must be equal either to 1 or 2")
 	
 	# check scale.param
 	if(!is.null(scale.param)){
