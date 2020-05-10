@@ -723,7 +723,7 @@ SEXP Smooth_FPCA(SEXP Rlocations, SEXP Rdatamatrix, SEXP Rmesh, SEXP Rorder, SEX
    	else if(regressionData.getOrder()==2 && mydim==2 && ndim==3)
    		return(GAM_skeleton<GAMDataLaplace,IntegratorTriangleP4, 2, 2, 3>(regressionData, Rmesh, Rmu0, family, RscaleParam));
 	else if(regressionData.getOrder()==1 && mydim==3 && ndim==3)
-		return(GAM_skeleton<GAMDataLaplace,IntegratorTriangleP4, 1, 3, 3>(regressionData, Rmesh, Rmu0, family, RscaleParam));
+		return(GAM_skeleton<GAMDataLaplace,IntegratorTetrahedronP2, 1, 3, 3>(regressionData, Rmesh, Rmu0, family, RscaleParam));
     return(R_NilValue);
 }
 
@@ -748,13 +748,13 @@ SEXP Smooth_FPCA(SEXP Rlocations, SEXP Rdatamatrix, SEXP Rmesh, SEXP Rorder, SEX
     else if(regressionData.getOrder()==2 && mydim==2 && ndim==2)
 		return(GAM_skeleton<GAMDataElliptic,IntegratorTriangleP4, 2, 2, 2>(regressionData, Rmesh, Rmu0, family, RscaleParam));
 	/*
-	else if(regressionData.getOrder()==1 && mydim==2 && ndim==3)
-    	return(regression_skeleton<RegressionData,IntegratorTriangleP2, 1, 2, 3>(regressionData, Rmesh));
+    else if(regressionData.getOrder()==1 && mydim==2 && ndim==3)
+    	return(GAM_skeleton<GAMDataElliptic,IntegratorTriangleP2, 1, 2, 3>(regressionData, Rmesh, Rmu0, family, RscaleParam));
    	else if(regressionData.getOrder()==2 && mydim==2 && ndim==3)
-    	return(regression_skeleton<RegressionData,IntegratorTriangleP4, 2, 2, 3>(regressionData, Rmesh));
+   		return(GAM_skeleton<GAMDataElliptic,IntegratorTriangleP4, 2, 2, 3>(regressionData, Rmesh, Rmu0, family, RscaleParam));
 	else if(regressionData.getOrder()==1 && mydim==3 && ndim==3)
-    	return(regression_skeleton<RegressionData,IntegratorTetrahedronP2, 1, 3, 3>(regressionData, Rmesh));
-    */
+		return(GAM_skeleton<GAMDataElliptic,IntegratorTetrahedronP2, 1, 3, 3>(regressionData, Rmesh, Rmu0, family, RscaleParam));
+	*/
     return(R_NilValue);
 }
 

@@ -175,6 +175,23 @@ void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::update_solution(UI
   //Set up regression
   MixedFERegression<InputHandler, Integrator, ORDER, mydim, ndim> regression(mesh_, inputData_);
 
+  std::string saving_filename = "bc_index";
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+  printer::STDvector(  saving_filename ,inputData_.getDirichletIndices());
+
+  saving_filename = "bc_index_dim";
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+  printer::SaveDimension(saving_filename, inputData_.getDirichletIndices());
+
+  saving_filename = "bc_values_dim";
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+  printer::SaveDimension(saving_filename, inputData_.getDirichletValues());
+
+  saving_filename = "bc_values";
+  saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
+  printer::STDvector(  saving_filename ,inputData_.getDirichletValues());
+
+
   printer::milestone("after_MixedFEregression.txt");
 
   regression.apply();
@@ -184,7 +201,7 @@ void FPIRLS_Base<InputHandler,Integrator,ORDER, mydim, ndim>::update_solution(UI
   _solution[lambda_index] = regression.getSolution()[0];
   _dof[lambda_index] = regression.getDOF()[0];
 
-  std::string saving_filename = "solution_entire_";
+  saving_filename = "solution_entire_";
   saving_filename = saving_filename + std::to_string(lambda_index) + ".txt";
   printer::saveVectorXr(saving_filename,_solution[lambda_index]);
 

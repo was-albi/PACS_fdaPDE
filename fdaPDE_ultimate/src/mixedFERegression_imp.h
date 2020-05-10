@@ -622,9 +622,35 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim,ndim>::computeDeg
 		if (isRcomputed_ == false){
 			isRcomputed_ = true;
 			Eigen::SparseLU<SpMat> solver;
+
+			saving_filename = "R0_in_IF";
+	 		saving_filename = saving_filename + ".txt";
+			printer::SaveMatrixXr(saving_filename, R0_);
+
+			saving_filename = "R1_in_IF";
+	 		saving_filename = saving_filename + ".txt";
+			printer::SaveMatrixXr(saving_filename, R1_);
+
+
+			printer::variableInt("R0_in_IF_cols.txt", R0_.cols());
+			printer::variableInt("R0_in_IF_rows.txt", R0_.rows());
+			
+			printer::variableInt("R1_in_IF_cols.txt",  R1_.cols());
+			printer::variableInt("R1_in_IF_rows.txt",  R1_.rows());
+						
+
+
 			solver.compute(R0_);
-			auto X2 = solver.solve(R1_);
+			printer::milestone("isRcomputed_1.txt");
+			MatrixXr X2 = solver.solve(R1_);
+			printer::milestone("isRcomputed_2.txt");
+
+			saving_filename = "X2";
+	 		saving_filename = saving_filename + ".txt";
+			printer::SaveMatrixXr(saving_filename, X2);
+
 			R_ = R1_.transpose() * X2;
+			printer::milestone("isRcomputed_3.txt");
 		}
 
 		saving_filename = "prova_cdof_exact_3";
@@ -852,14 +878,17 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::apply(EO
 	printer::milestone("apply_5.txt");
 
 	if(this->isSpaceVarying)
-	{
+	{	
+		printer::milestone("apply_51.txt");
 	    _rightHandSide.bottomRows(nnodes)=lambda*forcingTerm;
 	}
 
 	//Applying boundary conditions if necessary
-	if(regressionData_.getDirichletIndices().size() != 0)  // if areal data NO BOUNDARY CONDITIONS
+	if(regressionData_.getDirichletIndices().size() != 0){  // if areal data NO BOUNDARY CONDITIONS
+		printer::milestone("apply_52.txt");
 		addDirichletBC();
-
+	}
+	printer::milestone("apply_53.txt");
 	system_factorize();
 	printer::milestone("apply_6.txt");
 

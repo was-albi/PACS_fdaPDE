@@ -28,7 +28,7 @@ CPP_smooth.GAM.FEM<-function(locations, observations, FEMbasis, lambda,
     BC$BC_indices<-vector(length=0)
   }else
   {
-    BC$BC_indices<-as.vector(BC$BC_indices)
+    BC$BC_indices<-as.vector(BC$BC_indices)-1
   }
   
   if(is.null(BC$BC_values))
@@ -122,7 +122,7 @@ CPP_smooth.GAM.FEM.PDE.basis<-function(locations, observations, FEMbasis, lambda
     BC$BC_indices<-vector(length=0)
   }else
   {
-    BC$BC_indices<-as.vector(BC$BC_indices)
+    BC$BC_indices<-as.vector(BC$BC_indices)-1
   }
   
   if(is.null(BC$BC_values))
@@ -219,7 +219,7 @@ CPP_smooth.GAM.FEM.PDE.sv.basis<-function(locations, observations, FEMbasis, lam
     BC$BC_indices<-vector(length=0)
   }else
   {
-    BC$BC_indices<-as.vector(BC$BC_indices)
+    BC$BC_indices<-as.vector(BC$BC_indices) -1
   }
   
   if(is.null(BC$BC_values))
@@ -227,7 +227,7 @@ CPP_smooth.GAM.FEM.PDE.sv.basis<-function(locations, observations, FEMbasis, lam
     BC$BC_values<-vector(length=0)
   }else
   {
-    BC$BC_values<-as.vector(BC$BC_values)
+    BC$BC_values<-as.vector(BC$BC_values) 
   }
 
   if(is.null(mu0))
@@ -328,7 +328,7 @@ CPP_smooth.manifold.GAM.FEM.basis<-function(locations, observations, FEMbasis, l
     BC$BC_indices<-vector(length=0)
   }else
   {
-    BC$BC_indices<-as.vector(BC$BC_indices)
+    BC$BC_indices<-as.vector(BC$BC_indices)-1
   }
   
   if(is.null(BC$BC_values))
@@ -426,7 +426,7 @@ CPP_smooth.volume.GAM.FEM.basis<-function(locations, observations, FEMbasis, lam
     BC$BC_indices<-vector(length=0)
   }else
   {
-    BC$BC_indices<-as.vector(BC$BC_indices)
+    BC$BC_indices<-as.vector(BC$BC_indices)-1
   }
   
   if(is.null(BC$BC_values))
